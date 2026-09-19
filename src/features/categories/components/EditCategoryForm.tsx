@@ -1,21 +1,15 @@
-"use client";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
 import { Input } from "@/components/ui/input";
-import { useUpdateCategory } from "@/features/categories/hooks/useCategories";
+import { updateCategory } from "@/features/categories/api/categories.api";
 import type {
   Category,
   CategoryUpdate,
 } from "@/features/categories/types/category.types";
-import {
-  categorySchema,
-  type CategoryFormData,
-} from "../schemas/category.schema";
+type FormErrors = { name?: string };
 
 type EditCategoryFormProps = {
   category: Category;
@@ -26,23 +20,21 @@ export function EditCategoryForm({
   category,
   onSuccess,
 }: EditCategoryFormProps) {
-  const updateCategoryMutation = useUpdateCategory();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isDirty },
-  } = useForm<CategoryFormData>({
-    resolver: zodResolver(categorySchema),
-    defaultValues: { name: category.name },
-  });
+  const [name, setName] = useState(category.name);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isDirty = name !== category.name;
 
-  async function onSubmit(data: CategoryFormData) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!name.trim()) {
+      setErrors({ name: "Name is required." });
+      return;
+    }
+
     try {
-      const categoryData: CategoryUpdate = { name: data.name.trim() };
-      await updateCategoryMutation.mutateAsync({
-        id: category.id,
-        category: categoryData,
-      });
+      setIsSubmitting(true);
+      await updateCategory(category.id, { name: name.trim() });
       toast.success("Category updated successfully");
       onSuccess();
     } catch (error) {
@@ -50,11 +42,13 @@ export function EditCategoryForm({
       toast.error(
         error instanceof Error ? error.message : "Failed to update category",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit}>
       <div className="grid flex-1 auto-rows-min gap-6 px-4">
         <div>
           <h2 className="text-xl font-semibold">Edit Category</h2>
@@ -62,17 +56,21 @@ export function EditCategoryForm({
             Update the category information.
           </p>
         </div>
-        <FormField label="Name" required error={errors.name?.message}>
+        <FormField label="Name" required error={errors.name}>
           <Input
             id="category-name"
             placeholder="Enter category name..."
-            {...register("name")}
+            value={name}
+            onChange={(event) => {
+              setName(event.target.value);
+              setErrors({});
+            }}
           />
         </FormField>
       </div>
       <FormSubmitButton
-        isPending={updateCategoryMutation.isPending}
-        disabled={updateCategoryMutation.isPending || !isDirty}
+        isPending={isSubmitting}
+        disabled={!isDirty}
         pendingText="Updating..."
       >
         Update Category

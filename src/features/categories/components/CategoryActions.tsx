@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { ActionButtons } from "@/components/common/ActionButtons";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { FormSheet } from "@/components/common/FormSheet";
-import { useDeleteCategory } from "@/features/categories/hooks/useCategories";
+import { deleteCategory } from "@/features/categories/api/categories.api";
 import type { Category } from "@/features/categories/types/category.types";
 import { EditCategoryForm } from "./EditCategoryForm";
 
@@ -18,11 +18,12 @@ type CategoryActionsProps = {
 export function CategoryActions({ category }: CategoryActionsProps) {
   const [editOpen, setEditOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
-  const deleteCategoryMutation = useDeleteCategory();
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   async function handleDelete() {
     try {
-      await deleteCategoryMutation.mutateAsync(category.id);
+      setIsDeleting(true);
+      await deleteCategory(category.id);
       toast.success("Category deleted successfully");
       setDeleteOpen(false);
     } catch (error) {
@@ -30,6 +31,8 @@ export function CategoryActions({ category }: CategoryActionsProps) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete category",
       );
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -61,7 +64,7 @@ export function CategoryActions({ category }: CategoryActionsProps) {
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        isPending={deleteCategoryMutation.isPending}
+        isPending={isDeleting}
         onConfirm={handleDelete}
       />
     </>

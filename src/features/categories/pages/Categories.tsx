@@ -1,31 +1,38 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { FormSheet } from "@/components/common/FormSheet";
 import { DataTable } from "@/components/data-table/DataTable";
 import { Button } from "@/components/ui/button";
 import { CreateCategoryForm } from "@/features/categories/components/CreateCategoryForm";
-import { useCategories } from "../hooks/useCategories";
+import { getCategories } from "@/features/categories/api/categories.api";
+import type { Category } from "@/features/categories/types/category.types";
 import { columns } from "../components/columns";
 
 export function Categories() {
   const [addOpen, setAddOpen] = useState(false);
-  const { data: categories, isLoading, isError, error } = useCategories();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data);
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to load categories.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   if (isLoading) {
     return <div>Loading categories...</div>;
-  }
-
-  if (isError) {
-    return (
-      <div>
-        <h1 className="text-2xl font-bold">Categories</h1>
-        <p className="text-destructive">
-          {error instanceof Error
-            ? error.message
-            : "Failed to load categories."}
-        </p>
-      </div>
-    );
   }
 
   return (
@@ -45,7 +52,7 @@ export function Categories() {
         <CreateCategoryForm onSuccess={() => setAddOpen(false)} />
       </FormSheet>
 
-      <DataTable columns={columns} data={categories ?? []} />
+      <DataTable columns={columns} data={categories} />
     </div>
   );
 }
