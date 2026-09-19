@@ -30,87 +30,83 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen bg-background px-4 text-foreground flex items-center justify-center">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white">
-            <BookOpen size={28} />
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg">
+            <BookOpen size={30} />
           </div>
-
-          <h1 className="text-3xl font-bold text-gray-900">Welcome back</h1>
-
-          <p className="mt-2 text-gray-500">Sign in to your BookFlow account</p>
+          <h1 className="text-3xl font-bold tracking-tight"> Welcome back </h1>
+          <p className="mt-2 text-muted-foreground">
+            Sign in to your BookFlow account
+          </p>
         </div>
-
         {/* Form */}
         <form
           onSubmit={handleSubmit}
-          className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm"
+          className="rounded-2xl border border-border bg-card p-8 shadow-xl"
         >
           {/* Email */}
           <div className="mb-5">
             <label
               htmlFor="email"
-              className="mb-2 block text-sm font-medium text-gray-700"
+              className="mb-2 block text-sm font-medium text-card-foreground"
             >
               Email
             </label>
-
             <div className="relative">
               <Mail
-                size={20}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                size={19}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               />
-
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-lg border border-input bg-background py-3 pl-10 pr-4 text-foreground placeholder:text-muted-foreground outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
               />
             </div>
           </div>
-
           {/* Password */}
           <div className="mb-6">
             <label
               htmlFor="password"
-              className="mb-2 block text-sm font-medium text-gray-700"
+              className="mb-2 block text-sm font-medium text-card-foreground"
             >
               Password
             </label>
-
             <div className="relative">
               <LockKeyhole
-                size={20}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                size={19}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               />
-
               <input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="w-full rounded-lg border border-input bg-background py-3 pl-10 pr-4 text-foreground placeholder:text-muted-foreground outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
               />
             </div>
           </div>
-
           {/* Submit */}
           <button
             type="submit"
             disabled={isLoading}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading ? "Signing in..." : "Sign in"}
-
-            {!isLoading && <ArrowRight size={20} />}
+            {!isLoading && <ArrowRight size={19} />}
           </button>
         </form>
+        {/* Footer */}
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          BookFlow
+        </p>
       </div>
     </div>
   );
