@@ -7,11 +7,15 @@ import { columns } from "@/features/books/components/columns";
 import { CreateBookForm } from "@/features/books/components/CreateBookForm";
 import { getBooks } from "@/features/books/api/books.api";
 import type { Book } from "../types/book.types";
+import { isAdmin, isLibrarian } from "@/features/auth/utils/auth.utils";
 
 export function Books() {
   const [addOpen, setAddOpen] = useState(false);
   const [books, setBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const isAdminUser = isAdmin();
+  const isLibrarianUser = isLibrarian();
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -46,8 +50,10 @@ export function Books() {
             Manage and organize your library books.
           </p>
         </div>
-
-        <Button onClick={() => setAddOpen(true)}>Add Book</Button>
+        {isAdminUser ||
+          (isLibrarianUser && (
+            <Button onClick={() => setAddOpen(true)}>Add Book</Button>
+          ))}
       </div>
 
       <FormSheet open={addOpen} onOpenChange={setAddOpen}>
