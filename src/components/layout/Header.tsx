@@ -15,14 +15,41 @@ import {
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useTheme } from "@/context/useTheme";
+import { logout } from "@/features/auth/api/auth.api";
+import type { LogoutRequest } from "@/features/auth/types/auth";
 
 export function Header() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login", { replace: true });
+  const handleLogout = async () => {
+    const email = localStorage.getItem("email");
+    const refreshToken = localStorage.getItem("refreshToken");
+
+    if (!email || !refreshToken) {
+      localStorage.clear();
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const data: LogoutRequest = {
+        email,
+        refreshToken,
+      };
+
+      await logout(data);
+
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("email");
+
+      navigate("/login");
+    }
   };
 
   return (
