@@ -1,5 +1,11 @@
 import { apiClient } from "@/lib/api-client";
 import type { Author, AuthorCreate, AuthorUpdate } from "../types/author.types";
+import { api } from "@/lib/api";
+
+export const getAuthors = async (): Promise<Author[]> => {
+  const response = await api.get<Author[]>("/Author");
+  return response.data;
+};
 
 export const authorsApi = {
   getAll: () => apiClient<Author[]>("/Author"),

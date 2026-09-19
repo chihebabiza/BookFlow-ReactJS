@@ -4,32 +4,30 @@ import type {
   BookUpdate,
 } from "@/features/books/types/book.types";
 import { api } from "@/lib/api";
-import { apiClient } from "@/lib/api-client";
 
 export const getBooks = async (): Promise<Book[]> => {
   const response = await api.get<Book[]>("/Book");
   return response.data;
 };
 
-export const booksApi = {
-  getAll: () => apiClient<Book[]>("/Book"),
+export const getBookById = async (id: number): Promise<Book> => {
+  const response = await api.get<Book>(`/Book/${id}`);
+  return response.data;
+};
 
-  getById: (id: number) => apiClient<Book>(`/Book/${id}`),
+export const createBook = async (book: BookCreate): Promise<Book> => {
+  const response = await api.post<Book>("/Book", book);
+  return response.data;
+};
 
-  create: (book: BookCreate) =>
-    apiClient<number>("/Book", {
-      method: "POST",
-      body: JSON.stringify(book),
-    }),
+export const updateBook = async (
+  id: number,
+  book: BookUpdate,
+): Promise<Book> => {
+  const response = await api.put<Book>(`/Book/${id}`, book);
+  return response.data;
+};
 
-  update: (id: number, book: BookUpdate) =>
-    apiClient<{ message: string }>(`/Book/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(book),
-    }),
-
-  delete: (id: number) =>
-    apiClient<void>(`/Book/${id}`, {
-      method: "DELETE",
-    }),
+export const deleteBook = async (id: number): Promise<void> => {
+  await api.delete(`/Book/${id}`);
 };

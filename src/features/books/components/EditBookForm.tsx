@@ -1,12 +1,11 @@
-"use client";
-
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
-
-import { useAuthors } from "@/features/authors/hooks/useAuthors";
-import { useCategories } from "@/features/categories/hooks/useCategories";
-import { useUpdateBook } from "@/features/books/hooks/useBooks";
+import { getAuthors } from "@/features/authors/api/authors.api";
+import { getCategories } from "@/features/categories/api/categories.api";
+import { updateBook } from "@/features/books/api/books.api";
+import type { Author } from "@/features/authors/types/author.types";
+import type { Category } from "@/features/categories/types/category.types";
 import type { Book, BookUpdate } from "@/features/books/types/book.types";
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -20,9 +19,12 @@ interface EditBookFormProps {
 }
 
 export function EditBookForm({ book, onSuccess }: EditBookFormProps) {
-  const { data: authors = [] } = useAuthors();
-  const { data: categories = [] } = useCategories();
-  const updateBookMutation = useUpdateBook();
+  const [authors, setAuthors] = useState<Author[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  const [isLoadingAuthors, setIsLoadingAuthors] = useState(true);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
@@ -41,8 +43,42 @@ export function EditBookForm({ book, onSuccess }: EditBookFormProps) {
     },
   });
 
+  useEffect(() => {
+    const fetchAuthors = async () => {
+      try {
+        const data = await getAuthors();
+        setAuthors(data);
+      } catch (error) {
+        console.error("Failed to load authors:", error);
+        toast.error("Failed to load authors.");
+      } finally {
+        setIsLoadingAuthors(false);
+      }
+    };
+
+    fetchAuthors();
+  }, []);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+        toast.error("Failed to load categories.");
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   async function onSubmit(data: EditBookFormData) {
     try {
+      setIsSubmitting(true);
+
       const bookData: BookUpdate = {
         title: data.title.trim(),
         isbn: data.isbn.trim(),
@@ -51,12 +87,10 @@ export function EditBookForm({ book, onSuccess }: EditBookFormProps) {
         publishedDate: data.publishedDate || null,
       };
 
-      await updateBookMutation.mutateAsync({
-        id: book.id,
-        book: bookData,
-      });
+      await updateBook(book.id, bookData);
 
       toast.success("Book updated successfully");
+
       onSuccess();
     } catch (error) {
       console.error("Failed to update book:", error);
@@ -64,6 +98,8 @@ export function EditBookForm({ book, onSuccess }: EditBookFormProps) {
       toast.error(
         error instanceof Error ? error.message : "Failed to update book",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -100,9 +136,12 @@ export function EditBookForm({ book, onSuccess }: EditBookFormProps) {
             {...register("authorId", {
               valueAsNumber: true,
             })}
-            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+            disabled={isLoadingAuthors}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <option value={0}>Select an author</option>
+            <option value={0}>
+              {isLoadingAuthors ? "Loading authors..." : "Select an author"}
+            </option>
 
             {authors.map((author) => (
               <option key={author.id} value={author.id}>
@@ -118,9 +157,14 @@ export function EditBookForm({ book, onSuccess }: EditBookFormProps) {
             {...register("categoryId", {
               valueAsNumber: true,
             })}
-            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+            disabled={isLoadingCategories}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <option value={0}>Select a category</option>
+            <option value={0}>
+              {isLoadingCategories
+                ? "Loading categories..."
+                : "Select a category"}
+            </option>
 
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
@@ -144,8 +188,8 @@ export function EditBookForm({ book, onSuccess }: EditBookFormProps) {
       </div>
 
       <FormSubmitButton
-        isPending={updateBookMutation.isPending}
-        disabled={updateBookMutation.isPending || !isDirty}
+        isPending={isSubmitting}
+        disabled={isSubmitting || !isDirty}
         pendingText="Updating..."
       >
         Update Book

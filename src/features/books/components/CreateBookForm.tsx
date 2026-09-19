@@ -1,17 +1,18 @@
-"use client";
-
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
-
-import { useAuthors } from "@/features/authors/hooks/useAuthors";
-import { useCategories } from "@/features/categories/hooks/useCategories";
-import { useCreateBook } from "@/features/books/hooks/useBooks";
+import { getAuthors } from "@/features/authors/api/authors.api";
+import { getCategories } from "@/features/categories/api/categories.api";
+import { createBook } from "@/features/books/api/books.api";
 import type { BookCreate } from "@/features/books/types/book.types";
-
+import type { Author } from "@/features/authors/types/author.types";
+import type { Category } from "@/features/categories/types/category.types";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+
 import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
+
 import {
   createBookSchema,
   type CreateBookFormData,
@@ -22,10 +23,12 @@ interface CreateBookFormProps {
 }
 
 export function CreateBookForm({ onSuccess }: CreateBookFormProps) {
-  const { data: authors = [] } = useAuthors();
-  const { data: categories = [] } = useCategories();
+  const [authors, setAuthors] = useState<Author[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  const createBookMutation = useCreateBook();
+  const [isLoadingAuthors, setIsLoadingAuthors] = useState(true);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
@@ -44,8 +47,42 @@ export function CreateBookForm({ onSuccess }: CreateBookFormProps) {
     },
   });
 
+  useEffect(() => {
+    const fetchAuthors = async () => {
+      try {
+        const data = await getAuthors();
+        setAuthors(data);
+      } catch (error) {
+        console.error("Failed to load authors:", error);
+        toast.error("Failed to load authors.");
+      } finally {
+        setIsLoadingAuthors(false);
+      }
+    };
+
+    fetchAuthors();
+  }, []);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+        toast.error("Failed to load categories.");
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   async function onSubmit(data: CreateBookFormData) {
     try {
+      setIsSubmitting(true);
+
       const book: BookCreate = {
         title: data.title.trim(),
         isbn: data.isbn.trim(),
@@ -55,7 +92,7 @@ export function CreateBookForm({ onSuccess }: CreateBookFormProps) {
         quantity: data.quantity,
       };
 
-      await createBookMutation.mutateAsync(book);
+      await createBook(book);
 
       toast.success("Book added successfully");
 
@@ -67,6 +104,8 @@ export function CreateBookForm({ onSuccess }: CreateBookFormProps) {
       toast.error(
         error instanceof Error ? error.message : "Failed to add book",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -98,9 +137,12 @@ export function CreateBookForm({ onSuccess }: CreateBookFormProps) {
             {...register("authorId", {
               valueAsNumber: true,
             })}
-            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+            disabled={isLoadingAuthors}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <option value={0}>Select an author</option>
+            <option value={0}>
+              {isLoadingAuthors ? "Loading authors..." : "Select an author"}
+            </option>
 
             {authors.map((author) => (
               <option key={author.id} value={author.id}>
@@ -117,9 +159,14 @@ export function CreateBookForm({ onSuccess }: CreateBookFormProps) {
             {...register("categoryId", {
               valueAsNumber: true,
             })}
-            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+            disabled={isLoadingCategories}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <option value={0}>Select a category</option>
+            <option value={0}>
+              {isLoadingCategories
+                ? "Loading categories..."
+                : "Select a category"}
+            </option>
 
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
@@ -141,21 +188,21 @@ export function CreateBookForm({ onSuccess }: CreateBookFormProps) {
             {...register("publishedDate")}
           />
         </FormField>
+
         {/* Quantity */}
         <FormField label="Quantity" required error={errors.quantity?.message}>
           <Input
             id="book-quantity"
             type="number"
             min={1}
-            {...register("quantity", { valueAsNumber: true })}
+            {...register("quantity", {
+              valueAsNumber: true,
+            })}
           />
         </FormField>
       </div>
 
-      <FormSubmitButton
-        isPending={createBookMutation.isPending}
-        pendingText="Adding..."
-      >
+      <FormSubmitButton isPending={isSubmitting} pendingText="Adding...">
         Add Book
       </FormSubmitButton>
     </form>

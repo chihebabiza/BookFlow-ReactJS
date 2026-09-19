@@ -1,14 +1,12 @@
-"use client";
-
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-
 import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
 import { Input } from "@/components/ui/input";
+import { getBooks } from "@/features/books/api/books.api";
 import { useBookCopies } from "@/features/book-copies/hooks/useBookCopies";
-import { useBooks } from "@/features/books/hooks/useBooks";
 import { useCreateLoan } from "@/features/loans/hooks/useLoans";
 import {
   createLoanSchema,
@@ -16,6 +14,7 @@ import {
 } from "@/features/loans/schemas/loan.schema";
 import type { LoanCreate } from "@/features/loans/types/loan.types";
 import type { Member } from "@/features/members/types/member.types";
+import type { Book } from "@/features/books/types/book.types";
 
 type CreateLoanFormProps = {
   member: Member;
@@ -27,8 +26,11 @@ function getToday() {
 }
 
 export function CreateLoanForm({ member, onSuccess }: CreateLoanFormProps) {
-  const { data: books = [] } = useBooks();
+  const [books, setBooks] = useState<Book[]>([]);
+  const [booksLoading, setBooksLoading] = useState(true);
+
   const createLoanMutation = useCreateLoan();
+
   const {
     register,
     handleSubmit,
@@ -46,7 +48,30 @@ export function CreateLoanForm({ member, onSuccess }: CreateLoanFormProps) {
   });
 
   const bookId = watch("bookId");
+
   const { data: copies = [], isLoading: copiesLoading } = useBookCopies(bookId);
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        setBooksLoading(true);
+
+        const data = await getBooks();
+
+        setBooks(data);
+      } catch (error) {
+        console.error("Failed to load books:", error);
+
+        toast.error(
+          error instanceof Error ? error.message : "Failed to load books",
+        );
+      } finally {
+        setBooksLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, []);
 
   async function onSubmit(data: CreateLoanFormData) {
     try {
@@ -58,16 +83,20 @@ export function CreateLoanForm({ member, onSuccess }: CreateLoanFormProps) {
       };
 
       await createLoanMutation.mutateAsync(loan);
+
       toast.success("Loan added successfully");
+
       reset({
         bookId: 0,
         bookCopyId: 0,
         borrowedDate: getToday(),
         period: 14,
       });
+
       onSuccess();
     } catch (error) {
       console.error("Failed to add loan:", error);
+
       toast.error(
         error instanceof Error ? error.message : "Failed to add loan",
       );
@@ -79,6 +108,7 @@ export function CreateLoanForm({ member, onSuccess }: CreateLoanFormProps) {
       <div className="grid flex-1 auto-rows-min gap-6 px-4">
         <div>
           <h2 className="text-xl font-semibold">Add Loan</h2>
+
           <p className="text-sm text-muted-foreground">
             Create a loan for {member.firstName} {member.lastName}.
           </p>
@@ -86,10 +116,16 @@ export function CreateLoanForm({ member, onSuccess }: CreateLoanFormProps) {
 
         <FormField label="Book" required error={errors.bookId?.message}>
           <select
-            {...register("bookId", { valueAsNumber: true })}
-            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+            {...register("bookId", {
+              valueAsNumber: true,
+            })}
+            disabled={booksLoading}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <option value={0}>Select a book</option>
+            <option value={0}>
+              {booksLoading ? "Loading books..." : "Select a book"}
+            </option>
+
             {books.map((book) => (
               <option key={book.id} value={book.id}>
                 {book.title}
@@ -105,12 +141,15 @@ export function CreateLoanForm({ member, onSuccess }: CreateLoanFormProps) {
         >
           <select
             disabled={bookId <= 0 || copiesLoading}
-            {...register("bookCopyId", { valueAsNumber: true })}
+            {...register("bookCopyId", {
+              valueAsNumber: true,
+            })}
             className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
           >
             <option value={0}>
               {copiesLoading ? "Loading copies..." : "Select a copy"}
             </option>
+
             {copies.map((copy) => (
               <option key={copy.id} value={copy.id}>
                 BC-{copy.copyNumber}
@@ -127,7 +166,9 @@ export function CreateLoanForm({ member, onSuccess }: CreateLoanFormProps) {
           <Input
             type="number"
             min={1}
-            {...register("period", { valueAsNumber: true })}
+            {...register("period", {
+              valueAsNumber: true,
+            })}
           />
         </FormField>
 

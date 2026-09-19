@@ -1,12 +1,8 @@
-"use client";
-
 import * as React from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-
 import type { Book } from "@/features/books/types/book.types";
-import { useDeleteBook } from "@/features/books/hooks/useBooks";
-
+import { deleteBook } from "@/features/books/api/books.api";
 import { EditBookForm } from "./EditBookForm";
 import { ActionButtons } from "@/components/common/ActionButtons";
 import { FormSheet } from "@/components/common/FormSheet";
@@ -19,12 +15,13 @@ type BookActionsProps = {
 export function BookActions({ book }: BookActionsProps) {
   const [editOpen, setEditOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
-
-  const deleteBookMutation = useDeleteBook();
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   const handleDelete = async () => {
     try {
-      await deleteBookMutation.mutateAsync(book.id);
+      setIsDeleting(true);
+
+      await deleteBook(book.id);
 
       toast.success("Book deleted successfully");
       setDeleteOpen(false);
@@ -34,6 +31,8 @@ export function BookActions({ book }: BookActionsProps) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete book",
       );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -64,7 +63,7 @@ export function BookActions({ book }: BookActionsProps) {
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        isPending={deleteBookMutation.isPending}
+        isPending={isDeleting}
         onConfirm={handleDelete}
       />
     </>
