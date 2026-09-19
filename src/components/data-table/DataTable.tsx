@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -39,18 +39,10 @@ export function DataTable<TData, TValue>({
   data,
   exportFileName = "export",
 }: DataTableProps<TData, TValue>) {
-  const tableWrapperRef = useRef<HTMLDivElement>(null);
-  const topScrollRef = useRef<HTMLDivElement>(null);
-  const [tableWidth, setTableWidth] = useState(0);
-  const [hasHorizontalOverflow, setHasHorizontalOverflow] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
-
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-
   const [rowSelection, setRowSelection] = useState({});
-
   const [globalFilter, setGlobalFilter] = useState("");
 
   const table = useReactTable({
@@ -66,23 +58,16 @@ export function DataTable<TData, TValue>({
     },
 
     onSortingChange: setSorting,
-
     onColumnFiltersChange: setColumnFilters,
-
     onColumnVisibilityChange: setColumnVisibility,
-
     onRowSelectionChange: setRowSelection,
-
     onGlobalFilterChange: setGlobalFilter,
 
     globalFilterFn: "includesString",
 
     getCoreRowModel: getCoreRowModel(),
-
     getFilteredRowModel: getFilteredRowModel(),
-
     getSortedRowModel: getSortedRowModel(),
-
     getPaginationRowModel: getPaginationRowModel(),
 
     initialState: {
@@ -91,44 +76,6 @@ export function DataTable<TData, TValue>({
       },
     },
   });
-
-  useEffect(() => {
-    const tableWrapper = tableWrapperRef.current;
-    const topScroll = topScrollRef.current;
-    const tableScroll = tableWrapper?.querySelector<HTMLElement>(
-      '[data-slot="table-container"]',
-    );
-
-    if (!tableScroll || !topScroll) {
-      return;
-    }
-
-    const updateWidth = () => {
-      setTableWidth(tableScroll.scrollWidth);
-      setHasHorizontalOverflow(
-        tableScroll.scrollWidth > tableScroll.clientWidth,
-      );
-    };
-    const syncFromTop = () => {
-      tableScroll.scrollLeft = topScroll.scrollLeft;
-    };
-    const syncFromTable = () => {
-      topScroll.scrollLeft = tableScroll.scrollLeft;
-    };
-
-    updateWidth();
-    topScroll.addEventListener("scroll", syncFromTop);
-    tableScroll.addEventListener("scroll", syncFromTable);
-
-    const resizeObserver = new ResizeObserver(updateWidth);
-    resizeObserver.observe(tableScroll);
-
-    return () => {
-      topScroll.removeEventListener("scroll", syncFromTop);
-      tableScroll.removeEventListener("scroll", syncFromTable);
-      resizeObserver.disconnect();
-    };
-  }, [columns, data, columnVisibility]);
 
   return (
     <div className="w-full space-y-4">
@@ -140,15 +87,7 @@ export function DataTable<TData, TValue>({
       />
 
       {/* Table */}
-      <div ref={tableWrapperRef} className="rounded-md border">
-        <div
-          ref={topScrollRef}
-          className={
-            hasHorizontalOverflow ? "h-4 w-full overflow-x-auto" : "hidden"
-          }
-        >
-          <div style={{ width: tableWidth, height: 1 }} />
-        </div>
+      <div className="w-full overflow-x-auto rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -168,7 +107,7 @@ export function DataTable<TData, TValue>({
           </TableHeader>
 
           <TableBody>
-            {table.getRowModel().rows.length ? (
+            {table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
