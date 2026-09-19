@@ -2,42 +2,42 @@ import type { ColumnDef } from "@tanstack/react-table";
 
 import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHeader";
 import { UserActions } from "./UserActions";
-import { userRoles, type User } from "../types/user.types";
+import { type User } from "../types/user.types";
 
 export const columns: ColumnDef<User>[] = [
-  ...(["firstName", "lastName", "email", "role"] as const).map((key) => ({
-    accessorKey: key,
-    header: ({
-      column,
-    }: {
-      column: Parameters<NonNullable<ColumnDef<User>["header"]>>[0]["column"];
-    }) => (
-      <DataTableColumnHeader
-        column={column}
-        title={
-          key === "firstName"
-            ? "First Name"
-            : key === "lastName"
-              ? "Last Name"
-              : key[0].toUpperCase() + key.slice(1)
-        }
-      />
+  {
+    id: "fullName",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Full Name" />
     ),
-    cell: ({ row }: { row: { getValue: (key: string) => unknown } }) => {
-      const value = row.getValue(key);
-      const displayValue =
-        key === "role"
-          ? (userRoles.find((role) => role.label === value)?.label ??
-            String(value))
-          : String(value);
-
-      return <div className="font-medium">{displayValue}</div>;
-    },
-  })),
+    cell: ({ row }) => (
+      <div className="font-medium">
+        {row.original.firstName} {row.original.lastName}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "email",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Email" />
+    ),
+    cell: ({ row }) => (
+      <div className="font-medium">{row.getValue("email")}</div>
+    ),
+  },
+  {
+    accessorKey: "role",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Role" />
+    ),
+    cell: ({ row }) => (
+      <div className="font-medium">{row.getValue("role")}</div>
+    ),
+  },
   {
     accessorKey: "createdAt",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Created" />
+      <DataTableColumnHeader column={column} title="Created At" />
     ),
     cell: ({ row }) =>
       new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(

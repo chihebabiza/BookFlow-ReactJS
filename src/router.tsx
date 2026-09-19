@@ -47,29 +47,31 @@ export const router = createBrowserRouter([
             path: "categories",
             element: <Categories />,
           },
+
+          {
+            element: <AdminRoute />,
+            children: [
+              {
+                path: "users",
+                element: <Users />,
+              },
+            ],
+          },
+
+          {
+            element: <LibrarianRoute />,
+            children: [
+              {
+                path: "members",
+                element: <Members />,
+              },
+              {
+                path: "loans",
+                element: <MemberLoans />,
+              },
+            ],
+          },
         ],
-      },
-    ],
-  },
-  {
-    element: <AdminRoute />,
-    children: [
-      {
-        path: "users",
-        element: <Users />,
-      },
-    ],
-  },
-  {
-    element: <LibrarianRoute />,
-    children: [
-      {
-        path: "members",
-        element: <Members />,
-      },
-      {
-        path: "loans",
-        element: <MemberLoans />,
       },
     ],
   },
