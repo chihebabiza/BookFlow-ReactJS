@@ -8,7 +8,7 @@ import { Categories } from "./features/categories/pages/Categories";
 import { Members } from "./features/members/pages/Members";
 import { MemberLoans } from "./features/loans/pages/MemberLoans";
 import { Users } from "./features/users/pages/Users";
-import { Login } from "./features/auth/pages/Login";
+import Login from "./features/auth/pages/Login";
 
 export const router = createBrowserRouter([
   {
