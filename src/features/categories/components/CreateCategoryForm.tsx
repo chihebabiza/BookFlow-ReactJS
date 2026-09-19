@@ -56,10 +56,7 @@ export function CreateCategoryForm({ onSuccess }: CreateCategoryFormProps) {
           />
         </FormField>
       </div>
-      <FormSubmitButton
-        isPending={isSubmitting}
-        pendingText="Adding..."
-      >
+      <FormSubmitButton isPending={isSubmitting} pendingText="Adding...">
         Add Category
       </FormSubmitButton>
     </form>

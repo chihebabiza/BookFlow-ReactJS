@@ -10,7 +10,9 @@ export const getCategories = async (): Promise<Category[]> => {
   return response.data;
 };
 
-export const createCategory = async (category: CategoryCreate): Promise<Category> => {
+export const createCategory = async (
+  category: CategoryCreate,
+): Promise<Category> => {
   const response = await api.post<Category>("/Category", category);
   return response.data;
 };
@@ -26,4 +28,3 @@ export const updateCategory = async (
 export const deleteCategory = async (id: number): Promise<void> => {
   await api.delete(`/Category/${id}`);
 };
-
