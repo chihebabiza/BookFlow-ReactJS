@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { getAuthors } from "@/features/authors/api/authors.api";
 import { getCategories } from "@/features/categories/api/categories.api";
@@ -6,16 +6,35 @@ import { updateBook } from "@/features/books/api/books.api";
 import type { Author } from "@/features/authors/types/author.types";
 import type { Category } from "@/features/categories/types/category.types";
 import type { Book, BookUpdate } from "@/features/books/types/book.types";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
-import { editBookSchema, type EditBookFormData } from "../schemas/book.schema";
 
 interface EditBookFormProps {
   book: Book;
   onSuccess: () => void;
+}
+
+type FormData = {
+  title: string;
+  isbn: string;
+  authorId: number;
+  categoryId: number;
+  publishedDate: string;
+};
+
+type FormErrors = Partial<Record<keyof FormData, string>>;
+
+function getInitialFormData(book: Book): FormData {
+  return {
+    title: book.title,
+    isbn: book.isbn,
+    authorId: book.author.id,
+    categoryId: book.category.id,
+    publishedDate: book.publishedDate
+      ? book.publishedDate.substring(0, 10)
+      : "",
+  };
 }
 
 export function EditBookForm({ book, onSuccess }: EditBookFormProps) {
@@ -26,22 +45,15 @@ export function EditBookForm({ book, onSuccess }: EditBookFormProps) {
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isDirty },
-  } = useForm<EditBookFormData>({
-    resolver: zodResolver(editBookSchema),
-    defaultValues: {
-      title: book.title,
-      isbn: book.isbn,
-      authorId: book.author.id,
-      categoryId: book.category.id,
-      publishedDate: book.publishedDate
-        ? book.publishedDate.substring(0, 10)
-        : "",
-    },
-  });
+  const [formData, setFormData] = useState<FormData>(() =>
+    getInitialFormData(book),
+  );
+
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const initialFormData = getInitialFormData(book);
+
+  const isDirty = JSON.stringify(formData) !== JSON.stringify(initialFormData);
 
   useEffect(() => {
     const fetchAuthors = async () => {
@@ -75,16 +87,62 @@ export function EditBookForm({ book, onSuccess }: EditBookFormProps) {
     fetchCategories();
   }, []);
 
-  async function onSubmit(data: EditBookFormData) {
+  function handleChange(field: keyof FormData, value: string | number) {
+    setFormData((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+
+    setErrors((previous) => ({
+      ...previous,
+      [field]: undefined,
+    }));
+  }
+
+  function validateForm(): boolean {
+    const newErrors: FormErrors = {};
+
+    if (!formData.title.trim()) {
+      newErrors.title = "Title is required.";
+    }
+
+    if (!formData.isbn.trim()) {
+      newErrors.isbn = "ISBN is required.";
+    }
+
+    if (formData.authorId <= 0) {
+      newErrors.authorId = "Please select an author.";
+    }
+
+    if (formData.categoryId <= 0) {
+      newErrors.categoryId = "Please select a category.";
+    }
+
+    if (!formData.publishedDate) {
+      newErrors.publishedDate = "Published date is required.";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
       const bookData: BookUpdate = {
-        title: data.title.trim(),
-        isbn: data.isbn.trim(),
-        authorId: data.authorId,
-        categoryId: data.categoryId,
-        publishedDate: data.publishedDate || null,
+        title: formData.title.trim(),
+        isbn: formData.isbn.trim(),
+        authorId: formData.authorId,
+        categoryId: formData.categoryId,
+        publishedDate: formData.publishedDate || null,
       };
 
       await updateBook(book.id, bookData);
@@ -96,7 +154,7 @@ export function EditBookForm({ book, onSuccess }: EditBookFormProps) {
       console.error("Failed to update book:", error);
 
       toast.error(
-        error instanceof Error ? error.message : "Failed to update book",
+        error instanceof Error ? error.message : "Failed to update book.",
       );
     } finally {
       setIsSubmitting(false);
@@ -104,7 +162,7 @@ export function EditBookForm({ book, onSuccess }: EditBookFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit}>
       <div className="grid flex-1 auto-rows-min gap-6 px-4">
         <div>
           <h2 className="text-xl font-semibold">Edit Book</h2>
@@ -114,28 +172,34 @@ export function EditBookForm({ book, onSuccess }: EditBookFormProps) {
           </p>
         </div>
 
-        <FormField label="Title" required error={errors.title?.message}>
+        {/* Title */}
+        <FormField label="Title" required error={errors.title}>
           <Input
             id="book-title"
             placeholder="Enter book title..."
-            {...register("title")}
+            value={formData.title}
+            onChange={(event) => handleChange("title", event.target.value)}
           />
         </FormField>
 
-        <FormField label="ISBN" required error={errors.isbn?.message}>
+        {/* ISBN */}
+        <FormField label="ISBN" required error={errors.isbn}>
           <Input
             id="book-isbn"
             placeholder="Enter ISBN..."
-            {...register("isbn")}
+            value={formData.isbn}
+            onChange={(event) => handleChange("isbn", event.target.value)}
           />
         </FormField>
 
-        <FormField label="Author" required error={errors.authorId?.message}>
+        {/* Author */}
+        <FormField label="Author" required error={errors.authorId}>
           <select
             id="book-author"
-            {...register("authorId", {
-              valueAsNumber: true,
-            })}
+            value={formData.authorId}
+            onChange={(event) =>
+              handleChange("authorId", Number(event.target.value))
+            }
             disabled={isLoadingAuthors}
             className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -151,12 +215,14 @@ export function EditBookForm({ book, onSuccess }: EditBookFormProps) {
           </select>
         </FormField>
 
-        <FormField label="Category" required error={errors.categoryId?.message}>
+        {/* Category */}
+        <FormField label="Category" required error={errors.categoryId}>
           <select
             id="book-category"
-            {...register("categoryId", {
-              valueAsNumber: true,
-            })}
+            value={formData.categoryId}
+            onChange={(event) =>
+              handleChange("categoryId", Number(event.target.value))
+            }
             disabled={isLoadingCategories}
             className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -174,15 +240,15 @@ export function EditBookForm({ book, onSuccess }: EditBookFormProps) {
           </select>
         </FormField>
 
-        <FormField
-          label="Published Date"
-          required
-          error={errors.publishedDate?.message}
-        >
+        {/* Published Date */}
+        <FormField label="Published Date" required error={errors.publishedDate}>
           <Input
             id="book-published-date"
             type="date"
-            {...register("publishedDate")}
+            value={formData.publishedDate}
+            onChange={(event) =>
+              handleChange("publishedDate", event.target.value)
+            }
           />
         </FormField>
       </div>

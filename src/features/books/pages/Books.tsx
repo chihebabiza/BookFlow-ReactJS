@@ -50,10 +50,9 @@ export function Books() {
             Manage and organize your library books.
           </p>
         </div>
-        {isAdminUser ||
-          (isLibrarianUser && (
-            <Button onClick={() => setAddOpen(true)}>Add Book</Button>
-          ))}
+        {(isAdminUser || isLibrarianUser) && (
+          <Button onClick={() => setAddOpen(true)}>Add Book</Button>
+        )}
       </div>
 
       <FormSheet open={addOpen} onOpenChange={setAddOpen}>

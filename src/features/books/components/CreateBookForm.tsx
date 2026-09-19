@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { getAuthors } from "@/features/authors/api/authors.api";
 import { getCategories } from "@/features/categories/api/categories.api";
@@ -6,21 +6,33 @@ import { createBook } from "@/features/books/api/books.api";
 import type { BookCreate } from "@/features/books/types/book.types";
 import type { Author } from "@/features/authors/types/author.types";
 import type { Category } from "@/features/categories/types/category.types";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-
 import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
-
-import {
-  createBookSchema,
-  type CreateBookFormData,
-} from "../schemas/book.schema";
 
 interface CreateBookFormProps {
   onSuccess: () => void;
 }
+
+type FormData = {
+  title: string;
+  isbn: string;
+  authorId: number;
+  categoryId: number;
+  publishedDate: string;
+  quantity: number;
+};
+
+type FormErrors = Partial<Record<keyof FormData, string>>;
+
+const initialFormData: FormData = {
+  title: "",
+  isbn: "",
+  authorId: 0,
+  categoryId: 0,
+  publishedDate: "",
+  quantity: 1,
+};
 
 export function CreateBookForm({ onSuccess }: CreateBookFormProps) {
   const [authors, setAuthors] = useState<Author[]>([]);
@@ -30,22 +42,8 @@ export function CreateBookForm({ onSuccess }: CreateBookFormProps) {
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<CreateBookFormData>({
-    resolver: zodResolver(createBookSchema),
-    defaultValues: {
-      title: "",
-      isbn: "",
-      authorId: 0,
-      categoryId: 0,
-      publishedDate: "",
-      quantity: 1,
-    },
-  });
+  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     const fetchAuthors = async () => {
@@ -79,30 +77,82 @@ export function CreateBookForm({ onSuccess }: CreateBookFormProps) {
     fetchCategories();
   }, []);
 
-  async function onSubmit(data: CreateBookFormData) {
+  function handleChange(field: keyof FormData, value: string | number) {
+    setFormData((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+
+    setErrors((previous) => ({
+      ...previous,
+      [field]: undefined,
+    }));
+  }
+
+  function validateForm(): boolean {
+    const newErrors: FormErrors = {};
+
+    if (!formData.title.trim()) {
+      newErrors.title = "Title is required.";
+    }
+
+    if (!formData.isbn.trim()) {
+      newErrors.isbn = "ISBN is required.";
+    }
+
+    if (formData.authorId <= 0) {
+      newErrors.authorId = "Please select an author.";
+    }
+
+    if (formData.categoryId <= 0) {
+      newErrors.categoryId = "Please select a category.";
+    }
+
+    if (!formData.publishedDate) {
+      newErrors.publishedDate = "Published date is required.";
+    }
+
+    if (formData.quantity < 1) {
+      newErrors.quantity = "Quantity must be at least 1.";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
       const book: BookCreate = {
-        title: data.title.trim(),
-        isbn: data.isbn.trim(),
-        authorId: data.authorId,
-        categoryId: data.categoryId,
-        publishedDate: data.publishedDate,
-        quantity: data.quantity,
+        title: formData.title.trim(),
+        isbn: formData.isbn.trim(),
+        authorId: formData.authorId,
+        categoryId: formData.categoryId,
+        publishedDate: formData.publishedDate,
+        quantity: formData.quantity,
       };
 
       await createBook(book);
 
       toast.success("Book added successfully");
 
-      reset();
+      setFormData(initialFormData);
+      setErrors({});
+
       onSuccess();
     } catch (error) {
       console.error("Failed to add book:", error);
 
       toast.error(
-        error instanceof Error ? error.message : "Failed to add book",
+        error instanceof Error ? error.message : "Failed to add book.",
       );
     } finally {
       setIsSubmitting(false);
@@ -110,33 +160,36 @@ export function CreateBookForm({ onSuccess }: CreateBookFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit}>
       <div className="grid flex-1 auto-rows-min gap-6 px-4">
         {/* Title */}
-        <FormField label="Title" required error={errors.title?.message}>
+        <FormField label="Title" required error={errors.title}>
           <Input
             id="book-title"
             placeholder="Enter book title..."
-            {...register("title")}
+            value={formData.title}
+            onChange={(event) => handleChange("title", event.target.value)}
           />
         </FormField>
 
         {/* ISBN */}
-        <FormField label="ISBN" required error={errors.isbn?.message}>
+        <FormField label="ISBN" required error={errors.isbn}>
           <Input
             id="book-isbn"
             placeholder="Enter ISBN..."
-            {...register("isbn")}
+            value={formData.isbn}
+            onChange={(event) => handleChange("isbn", event.target.value)}
           />
         </FormField>
 
         {/* Author */}
-        <FormField label="Author" required error={errors.authorId?.message}>
+        <FormField label="Author" required error={errors.authorId}>
           <select
             id="book-author"
-            {...register("authorId", {
-              valueAsNumber: true,
-            })}
+            value={formData.authorId}
+            onChange={(event) =>
+              handleChange("authorId", Number(event.target.value))
+            }
             disabled={isLoadingAuthors}
             className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -153,12 +206,13 @@ export function CreateBookForm({ onSuccess }: CreateBookFormProps) {
         </FormField>
 
         {/* Category */}
-        <FormField label="Category" required error={errors.categoryId?.message}>
+        <FormField label="Category" required error={errors.categoryId}>
           <select
             id="book-category"
-            {...register("categoryId", {
-              valueAsNumber: true,
-            })}
+            value={formData.categoryId}
+            onChange={(event) =>
+              handleChange("categoryId", Number(event.target.value))
+            }
             disabled={isLoadingCategories}
             className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -177,27 +231,27 @@ export function CreateBookForm({ onSuccess }: CreateBookFormProps) {
         </FormField>
 
         {/* Published Date */}
-        <FormField
-          label="Published Date"
-          required
-          error={errors.publishedDate?.message}
-        >
+        <FormField label="Published Date" required error={errors.publishedDate}>
           <Input
             id="book-published-date"
             type="date"
-            {...register("publishedDate")}
+            value={formData.publishedDate}
+            onChange={(event) =>
+              handleChange("publishedDate", event.target.value)
+            }
           />
         </FormField>
 
         {/* Quantity */}
-        <FormField label="Quantity" required error={errors.quantity?.message}>
+        <FormField label="Quantity" required error={errors.quantity}>
           <Input
             id="book-quantity"
             type="number"
             min={1}
-            {...register("quantity", {
-              valueAsNumber: true,
-            })}
+            value={formData.quantity}
+            onChange={(event) =>
+              handleChange("quantity", Number(event.target.value))
+            }
           />
         </FormField>
       </div>
