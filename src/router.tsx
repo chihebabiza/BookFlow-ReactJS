@@ -1,5 +1,4 @@
 import { createBrowserRouter } from "react-router-dom";
-
 import App from "./App";
 import { Books } from "@/features/books/pages/Books";
 import { Dashboard } from "./features/dashboard/pages/Dashboard";
@@ -9,43 +8,50 @@ import { Members } from "./features/members/pages/Members";
 import { MemberLoans } from "./features/loans/pages/MemberLoans";
 import { Users } from "./features/users/pages/Users";
 import Login from "./features/auth/pages/Login";
+import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 
 export const router = createBrowserRouter([
   {
     path: "/login",
     element: <Login />,
   },
+
   {
-    path: "/",
-    element: <App />,
+    element: <ProtectedRoute />,
     children: [
       {
-        index: true,
-        element: <Dashboard />,
-      },
-      {
-        path: "books",
-        element: <Books />,
-      },
-      {
-        path: "authors",
-        element: <Authors />,
-      },
-      {
-        path: "categories",
-        element: <Categories />,
-      },
-      {
-        path: "members",
-        element: <Members />,
-      },
-      {
-        path: "users",
-        element: <Users />,
-      },
-      {
-        path: "members/:memberId/loans",
-        element: <MemberLoans />,
+        path: "/",
+        element: <App />,
+        children: [
+          {
+            index: true,
+            element: <Dashboard />,
+          },
+          {
+            path: "books",
+            element: <Books />,
+          },
+          {
+            path: "authors",
+            element: <Authors />,
+          },
+          {
+            path: "categories",
+            element: <Categories />,
+          },
+          {
+            path: "members",
+            element: <Members />,
+          },
+          {
+            path: "users",
+            element: <Users />,
+          },
+          {
+            path: "members/:memberId/loans",
+            element: <MemberLoans />,
+          },
+        ],
       },
     ],
   },

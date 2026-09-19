@@ -6,6 +6,7 @@ import "./index.css";
 import { ThemeProvider } from "./context/ThemeProvider";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./router";
+import { AuthProvider } from "./features/auth/contexts/AuthProvider";
 
 const queryClient = new QueryClient();
 
@@ -13,7 +14,9 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <RouterProvider router={router} />
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </StrictMode>,
