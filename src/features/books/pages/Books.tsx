@@ -1,33 +1,39 @@
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { DataTable } from "@/components/data-table/DataTable";
-
 import { FormSheet } from "@/components/common/FormSheet";
 import { Button } from "@/components/ui/button";
-
 import { columns } from "@/features/books/components/columns";
 import { CreateBookForm } from "@/features/books/components/CreateBookForm";
-import { useBooks } from "@/features/books/hooks/useBooks";
+import { getBooks } from "@/features/books/api/books.api";
+import type { Book } from "../types/book.types";
 
 export function Books() {
   const [addOpen, setAddOpen] = useState(false);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const { data: books, isLoading, isError, error } = useBooks();
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getBooks();
+        setBooks(data);
+      } catch (error) {
+        console.error("Failed to load books:", error);
+        toast.error(
+          error instanceof Error ? error.message : "Failed to load books.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, []);
 
   if (isLoading) {
     return <div>Loading books...</div>;
-  }
-
-  if (isError) {
-    return (
-      <div>
-        <h1 className="text-2xl font-bold">Books</h1>
-
-        <p className="text-destructive">
-          {error instanceof Error ? error.message : "Failed to load books."}
-        </p>
-      </div>
-    );
   }
 
   return (
@@ -48,7 +54,7 @@ export function Books() {
         <CreateBookForm onSuccess={() => setAddOpen(false)} />
       </FormSheet>
 
-      <DataTable columns={columns} data={books ?? []} />
+      <DataTable columns={columns} data={books} />
     </div>
   );
 }

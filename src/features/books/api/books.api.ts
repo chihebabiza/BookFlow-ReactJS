@@ -1,9 +1,15 @@
-import { apiClient } from "@/lib/api-client";
 import type {
   Book,
   BookCreate,
   BookUpdate,
 } from "@/features/books/types/book.types";
+import { api } from "@/lib/api";
+import { apiClient } from "@/lib/api-client";
+
+export const getBooks = async (): Promise<Book[]> => {
+  const response = await api.get<Book[]>("/Book");
+  return response.data;
+};
 
 export const booksApi = {
   getAll: () => apiClient<Book[]>("/Book"),
