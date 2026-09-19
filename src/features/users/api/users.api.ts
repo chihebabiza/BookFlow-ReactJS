@@ -1,31 +1,17 @@
-import { apiClient } from "@/lib/api-client";
 import type { User, UserCreate, UserUpdate } from "../types/user.types";
+import { api } from "@/lib/api";
 
-export const usersApi = {
-  getAll: () => apiClient<User[]>("/User"),
-
-  getById: (id: number) => apiClient<User>(`/User/${id}`),
-
-  create: (user: UserCreate) =>
-    apiClient<User>("/User", {
-      method: "POST",
-      body: JSON.stringify(user),
-    }),
-
-  update: (id: number, user: UserUpdate) =>
-    apiClient<User>(`/User/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(user),
-    }),
-
-  delete: (id: number) =>
-    apiClient<void>(`/User/${id}`, {
-      method: "DELETE",
-    }),
-
-  login: (credentials: { email: string; password: string }) =>
-    apiClient<{ token: string }>("/User/login", {
-      method: "POST",
-      body: JSON.stringify(credentials),
-    }),
+export const getUsers = async (): Promise<User[]> =>
+  (await api.get<User[]>("/User")).data;
+export const createUser = async (user: UserCreate): Promise<User> =>
+  (await api.post<User>("/User", user)).data;
+export const updateUser = async (id: number, user: UserUpdate): Promise<User> =>
+  (await api.put<User>(`/User/${id}`, user)).data;
+export const deleteUser = async (id: number): Promise<void> => {
+  await api.delete(`/User/${id}`);
 };
+
+export const loginUser = async (credentials: {
+  email: string;
+  password: string;
+}) => (await api.post<{ token: string }>("/User/login", credentials)).data;

@@ -7,24 +7,27 @@ import { toast } from "sonner";
 import { ActionButtons } from "@/components/common/ActionButtons";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { FormSheet } from "@/components/common/FormSheet";
-import { useDeleteUser } from "@/features/users/hooks/useUsers";
+import { deleteUser } from "@/features/users/api/users.api";
 import type { User } from "@/features/users/types/user.types";
 import { EditUserForm } from "./EditUserForm";
 
 export function UserActions({ user }: { user: User }) {
   const [editOpen, setEditOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
-  const deleteUserMutation = useDeleteUser();
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   async function handleDelete() {
     try {
-      await deleteUserMutation.mutateAsync(user.id);
+      setIsDeleting(true);
+      await deleteUser(user.id);
       toast.success("User deleted successfully");
       setDeleteOpen(false);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete user",
       );
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -53,7 +56,7 @@ export function UserActions({ user }: { user: User }) {
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        isPending={deleteUserMutation.isPending}
+        isPending={isDeleting}
         onConfirm={handleDelete}
       />
     </>

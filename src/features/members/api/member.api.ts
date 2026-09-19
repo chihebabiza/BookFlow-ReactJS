@@ -1,25 +1,29 @@
-import { apiClient } from "@/lib/api-client";
 import type { Member, MemberCreate, MemberUpdate } from "../types/member.types";
+import { api } from "@/lib/api";
 
-export const membersApi = {
-  getAll: () => apiClient<Member[]>("/Member"),
+export const getMembers = async (): Promise<Member[]> => {
+  const response = await api.get<Member[]>("/Member");
+  return response.data;
+};
 
-  getById: (id: number) => apiClient<Member>(`/Member/${id}`),
+export const getMemberById = async (id: number): Promise<Member> => {
+  const response = await api.get<Member>(`/Member/${id}`);
+  return response.data;
+};
 
-  create: (member: MemberCreate) =>
-    apiClient<Member>("/Member", {
-      method: "POST",
-      body: JSON.stringify(member),
-    }),
+export const createMember = async (member: MemberCreate): Promise<Member> => {
+  const response = await api.post<Member>("/Member", member);
+  return response.data;
+};
 
-  update: (id: number, member: MemberUpdate) =>
-    apiClient<Member>(`/Member/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(member),
-    }),
+export const updateMember = async (
+  id: number,
+  member: MemberUpdate,
+): Promise<Member> => {
+  const response = await api.put<Member>(`/Member/${id}`, member);
+  return response.data;
+};
 
-  delete: (id: number) =>
-    apiClient<void>(`/Member/${id}`, {
-      method: "DELETE",
-    }),
+export const deleteMember = async (id: number): Promise<void> => {
+  await api.delete(`/Member/${id}`);
 };

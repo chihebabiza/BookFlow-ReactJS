@@ -1,48 +1,55 @@
 import { ArrowLeft } from "lucide-react";
 import * as React from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { DataTable } from "@/components/data-table/DataTable";
 import { Button } from "@/components/ui/button";
 import { FormSheet } from "@/components/common/FormSheet";
-import { useMember } from "@/features/members/hooks/useMembers";
+import { getMemberById } from "@/features/members/api/member.api";
 import { getColumns } from "@/features/loans/components/columns";
 import { ReturnLoanForm } from "@/features/loans/components/ReturnLoanForm";
-import { useLoansByMember } from "@/features/loans/hooks/useLoans";
+import { loansApi } from "@/features/loans/api/loans.api";
+import type { Member } from "@/features/members/types/member.types";
 import type { Loan } from "@/features/loans/types/loan.types";
 
 export function MemberLoans() {
   const navigate = useNavigate();
   const { memberId } = useParams();
   const parsedMemberId = Number(memberId);
-  const memberQuery = useMember(parsedMemberId);
-  const loansQuery = useLoansByMember(parsedMemberId);
+  const [member, setMember] = useState<Member | null>(null);
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [returnLoan, setReturnLoan] = React.useState<Loan | null>(null);
+
+  useEffect(() => {
+    if (!Number.isInteger(parsedMemberId) || parsedMemberId <= 0) return;
+    Promise.all([
+      getMemberById(parsedMemberId),
+      loansApi.getByMemberId(parsedMemberId),
+    ])
+      .then(([memberData, loanData]) => {
+        setMember(memberData);
+        setLoans(loanData);
+      })
+      .catch((error) =>
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to load member loans.",
+        ),
+      )
+      .finally(() => setIsLoading(false));
+  }, [parsedMemberId]);
 
   if (!Number.isInteger(parsedMemberId) || parsedMemberId <= 0) {
     return <p className="text-destructive">Invalid member.</p>;
   }
 
-  if (memberQuery.isLoading || loansQuery.isLoading) {
+  if (isLoading) {
     return <div>Loading member loans...</div>;
   }
-
-  if (memberQuery.isError || loansQuery.isError) {
-    const error = memberQuery.error ?? loansQuery.error;
-
-    return (
-      <div>
-        <h1 className="text-2xl font-bold">Member Loans</h1>
-        <p className="text-destructive">
-          {error instanceof Error
-            ? error.message
-            : "Failed to load member loans."}
-        </p>
-      </div>
-    );
-  }
-
-  const member = memberQuery.data;
 
   return (
     <div className="space-y-6">
@@ -65,7 +72,7 @@ export function MemberLoans() {
 
       <DataTable
         columns={getColumns(setReturnLoan)}
-        data={loansQuery.data ?? []}
+        data={loans}
         exportFileName={`loans`}
       />
       {returnLoan && (

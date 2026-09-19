@@ -1,27 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { FormSheet } from "@/components/common/FormSheet";
 import { DataTable } from "@/components/data-table/DataTable";
 import { Button } from "@/components/ui/button";
-import { CreateUserForm } from "@/features/users/components/CreateUserForm";
 import { columns } from "@/features/users/components/columns";
-import { useUsers } from "@/features/users/hooks/useUsers";
+import { getUsers } from "@/features/users/api/users.api";
+import type { User } from "@/features/users/types/user.types";
+import { CreateUserForm } from "../components/CreateUserForm";
 
 export function Users() {
   const [addOpen, setAddOpen] = useState(false);
-  const { data: users, isLoading, isError, error } = useUsers();
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    getUsers()
+      .then(setUsers)
+      .catch((error) =>
+        toast.error(
+          error instanceof Error ? error.message : "Failed to load users.",
+        ),
+      )
+      .finally(() => setIsLoading(false));
+  }, []);
 
   if (isLoading) return <div>Loading users...</div>;
-  if (isError)
-    return (
-      <div>
-        <h1 className="text-2xl font-bold">Users</h1>
-        <p className="text-destructive">
-          {error instanceof Error ? error.message : "Failed to load users."}
-        </p>
-      </div>
-    );
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -36,7 +40,7 @@ export function Users() {
       <FormSheet open={addOpen} onOpenChange={setAddOpen}>
         <CreateUserForm onSuccess={() => setAddOpen(false)} />
       </FormSheet>
-      <DataTable columns={columns} data={users ?? []} />
+      <DataTable columns={columns} data={users} />
     </div>
   );
 }

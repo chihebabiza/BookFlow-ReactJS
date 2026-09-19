@@ -1,18 +1,8 @@
-"use client";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
-
 import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
 import { Input } from "@/components/ui/input";
-import { useCreateUser } from "@/features/users/hooks/useUsers";
-import {
-  userRoles,
-  type UserCreate,
-  type UserRoleValue,
-} from "@/features/users/types/user.types";
 import {
   Select,
   SelectContent,
@@ -20,84 +10,109 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { createUser } from "@/features/users/api/users.api";
 import {
-  createUserSchema,
-  type CreateUserFormData,
-} from "../schemas/user.schema";
+  userRoles,
+  type UserRoleValue,
+} from "@/features/users/types/user.types";
 
-type CreateUserFormProps = { onSuccess: () => void };
+type Props = { onSuccess: () => void };
+type FormData = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  passwordHash: string;
+  role: UserRoleValue;
+};
+type Errors = Partial<Record<keyof FormData, string>>;
+const initialData: FormData = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  passwordHash: "",
+  role: 0,
+};
 
-export function CreateUserForm({ onSuccess }: CreateUserFormProps) {
-  const createUserMutation = useCreateUser();
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<CreateUserFormData>({
-    resolver: zodResolver(createUserSchema),
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      passwordHash: "",
-      role: 0,
-    },
-  });
-  const roleValue = watch("role");
-
-  async function onSubmit(data: CreateUserFormData) {
+export function CreateUserForm({ onSuccess }: Props) {
+  const [formData, setFormData] = useState(initialData);
+  const [errors, setErrors] = useState<Errors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const handleChange = <K extends keyof FormData>(
+    field: K,
+    value: FormData[K],
+  ) => {
+    setFormData((current) => ({ ...current, [field]: value }));
+    setErrors((current) => ({ ...current, [field]: undefined }));
+  };
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextErrors: Errors = {};
+    if (!formData.firstName.trim())
+      nextErrors.firstName = "First name is required.";
+    if (!formData.lastName.trim())
+      nextErrors.lastName = "Last name is required.";
+    if (!formData.email.trim()) nextErrors.email = "Email is required.";
+    if (!formData.passwordHash.trim())
+      nextErrors.passwordHash = "Password hash is required.";
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
     try {
-      const user: UserCreate = {
-        firstName: data.firstName.trim(),
-        lastName: data.lastName.trim(),
-        email: data.email.trim(),
-        passwordHash: data.passwordHash.trim(),
-        role: data.role,
-      };
-      await createUserMutation.mutateAsync(user);
+      setIsSubmitting(true);
+      await createUser({
+        ...formData,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        passwordHash: formData.passwordHash.trim(),
+      });
       toast.success("User added successfully");
-      reset();
+      setFormData(initialData);
       onSuccess();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to add user",
+        error instanceof Error ? error.message : "Failed to add user.",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   }
-
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={handleSubmit}>
       <div className="grid flex-1 auto-rows-min gap-6 px-4">
-        <FormField
-          label="First Name"
-          required
-          error={errors.firstName?.message}
-        >
-          <Input id="user-first-name" {...register("firstName")} />
+        <FormField label="First Name" required error={errors.firstName}>
+          <Input
+            id="user-first-name"
+            value={formData.firstName}
+            onChange={(e) => handleChange("firstName", e.target.value)}
+          />
         </FormField>
-        <FormField label="Last Name" required error={errors.lastName?.message}>
-          <Input id="user-last-name" {...register("lastName")} />
+        <FormField label="Last Name" required error={errors.lastName}>
+          <Input
+            id="user-last-name"
+            value={formData.lastName}
+            onChange={(e) => handleChange("lastName", e.target.value)}
+          />
         </FormField>
-        <FormField label="Email" required error={errors.email?.message}>
-          <Input id="user-email" type="email" {...register("email")} />
+        <FormField label="Email" required error={errors.email}>
+          <Input
+            id="user-email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleChange("email", e.target.value)}
+          />
         </FormField>
-        <FormField
-          label="Password"
-          required
-          error={errors.passwordHash?.message}
-        >
-          <Input id="user-password-hash" {...register("passwordHash")} />
+        <FormField label="Password" required error={errors.passwordHash}>
+          <Input
+            id="user-password-hash"
+            value={formData.passwordHash}
+            onChange={(e) => handleChange("passwordHash", e.target.value)}
+          />
         </FormField>
-        <FormField label="Role" required error={errors.role?.message}>
+        <FormField label="Role" required error={errors.role}>
           <Select
-            value={String(roleValue)}
+            value={String(formData.role)}
             onValueChange={(value) =>
-              setValue("role", Number(value) as UserRoleValue, {
-                shouldValidate: true,
-              })
+              handleChange("role", Number(value) as UserRoleValue)
             }
           >
             <SelectTrigger id="user-role" className="w-full">
@@ -113,10 +128,7 @@ export function CreateUserForm({ onSuccess }: CreateUserFormProps) {
           </Select>
         </FormField>
       </div>
-      <FormSubmitButton
-        isPending={createUserMutation.isPending}
-        pendingText="Adding..."
-      >
+      <FormSubmitButton isPending={isSubmitting} pendingText="Adding...">
         Add User
       </FormSubmitButton>
     </form>

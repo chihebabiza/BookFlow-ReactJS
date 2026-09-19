@@ -5,10 +5,7 @@ import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
 import { Input } from "@/components/ui/input";
 import { updateCategory } from "@/features/categories/api/categories.api";
-import type {
-  Category,
-  CategoryUpdate,
-} from "@/features/categories/types/category.types";
+import type { Category } from "@/features/categories/types/category.types";
 type FormErrors = { name?: string };
 
 type EditCategoryFormProps = {

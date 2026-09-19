@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { ActionButtons } from "@/components/common/ActionButtons";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { FormSheet } from "@/components/common/FormSheet";
-import { useDeleteMember } from "@/features/members/hooks/useMembers";
+import { deleteMember } from "@/features/members/api/member.api";
 import type { Member } from "@/features/members/types/member.types";
 import { CreateLoanForm } from "./CreateLoanForm";
 import { EditMemberForm } from "./EditMemberForm";
@@ -22,11 +22,12 @@ export function MemberActions({ member }: MemberActionsProps) {
   const [editOpen, setEditOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [loanOpen, setLoanOpen] = React.useState(false);
-  const deleteMemberMutation = useDeleteMember();
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   async function handleDelete() {
     try {
-      await deleteMemberMutation.mutateAsync(member.id);
+      setIsDeleting(true);
+      await deleteMember(member.id);
       toast.success("Member deleted successfully");
       setDeleteOpen(false);
     } catch (error) {
@@ -34,6 +35,8 @@ export function MemberActions({ member }: MemberActionsProps) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete member",
       );
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -78,7 +81,7 @@ export function MemberActions({ member }: MemberActionsProps) {
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        isPending={deleteMemberMutation.isPending}
+        isPending={isDeleting}
         onConfirm={handleDelete}
       />
     </>
