@@ -18,10 +18,22 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-import { navigation } from "@/data/navigation";
+import { getUserRole } from "@/features/auth/utils/auth.utils";
+import {
+  adminNavigation,
+  librarianNavigation,
+  memberNavigation,
+} from "@/data/navigation";
 
 export function AppSidebar() {
+  const role = getUserRole();
+
+  const navigation =
+    role === "Admin"
+      ? adminNavigation
+      : role === "Librarian"
+        ? librarianNavigation
+        : memberNavigation;
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>

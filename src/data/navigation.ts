@@ -1,6 +1,6 @@
 import { BookOpen, Home, Users } from "lucide-react";
 
-export const navigation = [
+const commonNavigation = [
   {
     title: "Dashboard",
     path: "/",
@@ -21,14 +21,26 @@ export const navigation = [
     path: "/categories",
     icon: BookOpen,
   },
+];
+
+const memberNavigation = [...commonNavigation];
+
+const librarianNavigation = [
+  ...memberNavigation,
   {
     title: "Members",
     path: "/members",
     icon: Users,
   },
+];
+
+const adminNavigation = [
+  ...librarianNavigation,
   {
     title: "Users",
     path: "/users",
     icon: Users,
   },
 ];
+
+export { memberNavigation, librarianNavigation, adminNavigation };

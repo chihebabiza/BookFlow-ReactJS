@@ -1,14 +1,19 @@
 import { createBrowserRouter } from "react-router-dom";
+
 import App from "./App";
+
 import { Books } from "@/features/books/pages/Books";
 import { Dashboard } from "./features/dashboard/pages/Dashboard";
-import { Authors } from "./features/authors/pages/Authors";
-import { Categories } from "./features/categories/pages/Categories";
-import { Members } from "./features/members/pages/Members";
-import { MemberLoans } from "./features/loans/pages/MemberLoans";
-import { Users } from "./features/users/pages/Users";
+import { Authors } from "@/features/authors/pages/Authors";
+import { Categories } from "@/features/categories/pages/Categories";
+import { Members } from "@/features/members/pages/Members";
+import { MemberLoans } from "@/features/loans/pages/MemberLoans";
+import { Users } from "@/features/users/pages/Users";
 import Login from "./features/auth/pages/Login";
+
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
+import { AdminRoute } from "./features/auth/components/AdminRoute";
+import { LibrarianRoute } from "./features/auth/components/LibrarianRoute";
 
 export const router = createBrowserRouter([
   {
@@ -27,31 +32,44 @@ export const router = createBrowserRouter([
             index: true,
             element: <Dashboard />,
           },
+
           {
             path: "books",
             element: <Books />,
           },
+
           {
             path: "authors",
             element: <Authors />,
           },
+
           {
             path: "categories",
             element: <Categories />,
           },
-          {
-            path: "members",
-            element: <Members />,
-          },
-          {
-            path: "users",
-            element: <Users />,
-          },
-          {
-            path: "members/:memberId/loans",
-            element: <MemberLoans />,
-          },
         ],
+      },
+    ],
+  },
+  {
+    element: <AdminRoute />,
+    children: [
+      {
+        path: "users",
+        element: <Users />,
+      },
+    ],
+  },
+  {
+    element: <LibrarianRoute />,
+    children: [
+      {
+        path: "members",
+        element: <Members />,
+      },
+      {
+        path: "loans",
+        element: <MemberLoans />,
       },
     ],
   },
