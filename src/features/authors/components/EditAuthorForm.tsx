@@ -1,65 +1,68 @@
-"use client";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
 import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
 import { Input } from "@/components/ui/input";
-import { useUpdateAuthor } from "@/features/authors/hooks/useAuthors";
-import { useCountries } from "@/features/countries/hooks/useCountries";
+import { updateAuthor } from "@/features/authors/api/authors.api";
+import { countriesApi } from "@/features/countries/api/countries.api";
+import type { Country } from "@/features/countries/types/country.types";
 import type {
   Author,
   AuthorUpdate,
 } from "@/features/authors/types/author.types";
-import { authorSchema, type AuthorFormData } from "../schemas/author.schema";
 
-type EditAuthorFormProps = {
-  author: Author;
-  onSuccess: () => void;
-};
+type EditAuthorFormProps = { author: Author; onSuccess: () => void };
 
 export function EditAuthorForm({ author, onSuccess }: EditAuthorFormProps) {
-  const updateAuthorMutation = useUpdateAuthor();
-  const { data: countries = [], isLoading: countriesLoading } = useCountries();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isDirty },
-  } = useForm<AuthorFormData>({
-    resolver: zodResolver(authorSchema),
-    defaultValues: {
-      firstName: author.firstName,
-      lastName: author.lastName,
-      countryId: author.country.id,
-    },
-  });
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [firstName, setFirstName] = useState(author.firstName);
+  const [lastName, setLastName] = useState(author.lastName);
+  const [countryId, setCountryId] = useState(author.country.id);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoadingCountries, setIsLoadingCountries] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function onSubmit(data: AuthorFormData) {
+  useEffect(() => {
+    countriesApi
+      .getAll()
+      .then(setCountries)
+      .catch(() => toast.error("Failed to load countries."))
+      .finally(() => setIsLoadingCountries(false));
+  }, []);
+
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextErrors: Record<string, string> = {};
+    if (!firstName.trim()) nextErrors.firstName = "First name is required";
+    if (!lastName.trim()) nextErrors.lastName = "Last name is required";
+    if (!countryId) nextErrors.countryId = "Please select a country";
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
     try {
-      const authorData: AuthorUpdate = {
-        firstName: data.firstName.trim(),
-        lastName: data.lastName.trim(),
-        countryId: data.countryId,
+      setIsSubmitting(true);
+      const data: AuthorUpdate = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        countryId,
       };
-
-      await updateAuthorMutation.mutateAsync({
-        id: author.id,
-        author: authorData,
-      });
+      await updateAuthor(author.id, data);
       toast.success("Author updated successfully");
       onSuccess();
     } catch (error) {
-      console.error("Failed to update author:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to update author",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
+  const isDirty =
+    firstName !== author.firstName ||
+    lastName !== author.lastName ||
+    countryId !== author.country.id;
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={onSubmit}>
       <div className="grid flex-1 auto-rows-min gap-6 px-4">
         <div>
           <h2 className="text-xl font-semibold">Edit Author</h2>
@@ -67,32 +70,31 @@ export function EditAuthorForm({ author, onSuccess }: EditAuthorFormProps) {
             Update the author information.
           </p>
         </div>
-        <FormField
-          label="First Name"
-          required
-          error={errors.firstName?.message}
-        >
+        <FormField label="First Name" required error={errors.firstName}>
           <Input
             id="author-first-name"
-            placeholder="Enter first name..."
-            {...register("firstName")}
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
           />
         </FormField>
-        <FormField label="Last Name" required error={errors.lastName?.message}>
+        <FormField label="Last Name" required error={errors.lastName}>
           <Input
             id="author-last-name"
-            placeholder="Enter last name..."
-            {...register("lastName")}
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
           />
         </FormField>
-        <FormField label="Country" required error={errors.countryId?.message}>
+        <FormField label="Country" required error={errors.countryId}>
           <select
             id="author-country-id"
-            disabled={countriesLoading}
-            {...register("countryId", { valueAsNumber: true })}
+            value={countryId}
+            onChange={(e) => setCountryId(Number(e.target.value))}
+            disabled={isLoadingCountries}
             className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
           >
-            <option value={0}>Select a country</option>
+            <option value={0}>
+              {isLoadingCountries ? "Loading countries..." : "Select a country"}
+            </option>
             {countries.map((country) => (
               <option key={country.id} value={country.id}>
                 {country.name} ({country.code})
@@ -102,8 +104,8 @@ export function EditAuthorForm({ author, onSuccess }: EditAuthorFormProps) {
         </FormField>
       </div>
       <FormSubmitButton
-        isPending={updateAuthorMutation.isPending}
-        disabled={updateAuthorMutation.isPending || !isDirty}
+        isPending={isSubmitting}
+        disabled={!isDirty}
         pendingText="Updating..."
       >
         Update Author

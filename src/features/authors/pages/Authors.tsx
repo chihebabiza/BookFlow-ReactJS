@@ -1,28 +1,38 @@
 import { DataTable } from "@/components/data-table/DataTable";
 import { Button } from "@/components/ui/button";
 import { FormSheet } from "@/components/common/FormSheet";
-import { CreateAuthorForm } from "@/features/authors/components/CreateAuthorForm";
-import { useState } from "react";
-import { useAuthors } from "../hooks/useAuthors";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { getAuthors } from "@/features/authors/api/authors.api";
+import type { Author } from "@/features/authors/types/author.types";
 import { columns } from "../components/columns";
+import { CreateAuthorForm } from "../components/CreateAuthorForm";
 
 export function Authors() {
   const [addOpen, setAddOpen] = useState(false);
-  const { data: authors, isLoading, isError, error } = useAuthors();
+  const [authors, setAuthors] = useState<Author[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAuthors = async () => {
+      try {
+        setIsLoading(true);
+        setAuthors(await getAuthors());
+      } catch (error) {
+        console.error("Failed to load authors:", error);
+        toast.error(
+          error instanceof Error ? error.message : "Failed to load authors.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAuthors();
+  }, []);
 
   if (isLoading) {
     return <div>Loading authors...</div>;
-  }
-
-  if (isError) {
-    return (
-      <div>
-        <h1 className="text-2xl font-bold">Authors</h1>
-        <p className="text-destructive">
-          {error instanceof Error ? error.message : "Failed to load authors."}
-        </p>
-      </div>
-    );
   }
 
   return (
@@ -42,7 +52,7 @@ export function Authors() {
         <CreateAuthorForm onSuccess={() => setAddOpen(false)} />
       </FormSheet>
 
-      <DataTable columns={columns} data={authors ?? []} />
+      <DataTable columns={columns} data={authors} />
     </div>
   );
 }

@@ -1,83 +1,90 @@
-"use client";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
 import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
 import { Input } from "@/components/ui/input";
-import { useCreateAuthor } from "@/features/authors/hooks/useAuthors";
+import { createAuthor } from "@/features/authors/api/authors.api";
+import { countriesApi } from "@/features/countries/api/countries.api";
+import type { Country } from "@/features/countries/types/country.types";
 import type { AuthorCreate } from "@/features/authors/types/author.types";
-import { useCountries } from "@/features/countries/hooks/useCountries";
-import { authorSchema, type AuthorFormData } from "../schemas/author.schema";
 
-type CreateAuthorFormProps = {
-  onSuccess: () => void;
-};
+type CreateAuthorFormProps = { onSuccess: () => void };
 
 export function CreateAuthorForm({ onSuccess }: CreateAuthorFormProps) {
-  const createAuthorMutation = useCreateAuthor();
-  const { data: countries = [], isLoading: countriesLoading } = useCountries();
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<AuthorFormData>({
-    resolver: zodResolver(authorSchema),
-    defaultValues: { firstName: "", lastName: "", countryId: 0 },
-  });
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [countryId, setCountryId] = useState(0);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoadingCountries, setIsLoadingCountries] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function onSubmit(data: AuthorFormData) {
+  useEffect(() => {
+    countriesApi
+      .getAll()
+      .then(setCountries)
+      .catch(() => toast.error("Failed to load countries."))
+      .finally(() => setIsLoadingCountries(false));
+  }, []);
+
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextErrors: Record<string, string> = {};
+    if (!firstName.trim()) nextErrors.firstName = "First name is required";
+    if (!lastName.trim()) nextErrors.lastName = "Last name is required";
+    if (!countryId) nextErrors.countryId = "Please select a country";
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
     try {
+      setIsSubmitting(true);
       const author: AuthorCreate = {
-        firstName: data.firstName.trim(),
-        lastName: data.lastName.trim(),
-        countryId: data.countryId,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        countryId,
       };
-
-      await createAuthorMutation.mutateAsync(author);
+      await createAuthor(author);
       toast.success("Author added successfully");
-      reset();
+      setFirstName("");
+      setLastName("");
+      setCountryId(0);
       onSuccess();
     } catch (error) {
-      console.error("Failed to add author:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to add author",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
+    <form onSubmit={onSubmit}>
       <div className="grid flex-1 auto-rows-min gap-6 px-4">
-        <FormField
-          label="First Name"
-          required
-          error={errors.firstName?.message}
-        >
+        <FormField label="First Name" required error={errors.firstName}>
           <Input
             id="author-first-name"
-            placeholder="Enter first name..."
-            {...register("firstName")}
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
           />
         </FormField>
-        <FormField label="Last Name" required error={errors.lastName?.message}>
+        <FormField label="Last Name" required error={errors.lastName}>
           <Input
             id="author-last-name"
-            placeholder="Enter last name..."
-            {...register("lastName")}
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
           />
         </FormField>
-        <FormField label="Country" required error={errors.countryId?.message}>
+        <FormField label="Country" required error={errors.countryId}>
           <select
             id="author-country-id"
-            disabled={countriesLoading}
-            {...register("countryId", { valueAsNumber: true })}
+            value={countryId}
+            onChange={(e) => setCountryId(Number(e.target.value))}
+            disabled={isLoadingCountries}
             className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
           >
-            <option value={0}>Select a country</option>
+            <option value={0}>
+              {isLoadingCountries ? "Loading countries..." : "Select a country"}
+            </option>
             {countries.map((country) => (
               <option key={country.id} value={country.id}>
                 {country.name} ({country.code})
@@ -86,10 +93,7 @@ export function CreateAuthorForm({ onSuccess }: CreateAuthorFormProps) {
           </select>
         </FormField>
       </div>
-      <FormSubmitButton
-        isPending={createAuthorMutation.isPending}
-        pendingText="Adding..."
-      >
+      <FormSubmitButton isPending={isSubmitting} pendingText="Adding...">
         Add Author
       </FormSubmitButton>
     </form>
