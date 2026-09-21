@@ -1,3 +1,5 @@
+import type { UserCreate } from "@/features/users/types/user.types";
+
 export type Member = {
   id: number;
   firstName: string;
@@ -7,11 +9,7 @@ export type Member = {
   isActive: boolean;
 };
 
-export type MemberCreate = {
-  firstName: string;
-  lastName: string;
-  phone: string;
-};
+export type MemberCreate = UserCreate;
 
 export type MemberUpdate = {
   firstName: string;

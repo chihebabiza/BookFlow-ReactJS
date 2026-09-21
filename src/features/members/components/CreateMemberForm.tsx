@@ -6,9 +6,19 @@ import { Input } from "@/components/ui/input";
 import { createMember } from "@/features/members/api/member.api";
 
 type Props = { onSuccess: () => void };
-type FormData = { firstName: string; lastName: string; phone: string };
+type FormData = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  passwordHash: string;
+};
 type Errors = Partial<Record<keyof FormData, string>>;
-const initialData: FormData = { firstName: "", lastName: "", phone: "" };
+const initialData: FormData = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  passwordHash: "",
+};
 
 export function CreateMemberForm({ onSuccess }: Props) {
   const [formData, setFormData] = useState(initialData);
@@ -25,7 +35,9 @@ export function CreateMemberForm({ onSuccess }: Props) {
       nextErrors.firstName = "First name is required.";
     if (!formData.lastName.trim())
       nextErrors.lastName = "Last name is required.";
-    if (!formData.phone.trim()) nextErrors.phone = "Phone is required.";
+    if (!formData.email.trim()) nextErrors.email = "Email is required.";
+    if (!formData.passwordHash.trim())
+      nextErrors.passwordHash = "Password is required.";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
     try {
@@ -33,7 +45,9 @@ export function CreateMemberForm({ onSuccess }: Props) {
       await createMember({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        phone: formData.phone.trim(),
+        email: formData.email.trim(),
+        passwordHash: formData.passwordHash.trim(),
+        role: 0,
       });
       toast.success("Member added successfully");
       setFormData(initialData);
@@ -63,12 +77,20 @@ export function CreateMemberForm({ onSuccess }: Props) {
             onChange={(e) => handleChange("lastName", e.target.value)}
           />
         </FormField>
-        <FormField label="Phone" required error={errors.phone}>
+        <FormField label="Email" required error={errors.email}>
           <Input
-            id="member-phone"
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => handleChange("phone", e.target.value)}
+            id="member-email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleChange("email", e.target.value)}
+          />
+        </FormField>
+        <FormField label="Password" required error={errors.passwordHash}>
+          <Input
+            id="member-password"
+            type="password"
+            value={formData.passwordHash}
+            onChange={(e) => handleChange("passwordHash", e.target.value)}
           />
         </FormField>
       </div>
