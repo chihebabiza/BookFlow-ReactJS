@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
@@ -22,6 +23,7 @@ type FormData = {
   lastName: string;
   email: string;
   passwordHash: string;
+  confirmPassword: string;
   role: UserRoleValue;
 };
 type Errors = Partial<Record<keyof FormData, string>>;
@@ -30,6 +32,7 @@ const initialData: FormData = {
   lastName: "",
   email: "",
   passwordHash: "",
+  confirmPassword: "",
   role: 0,
 };
 
@@ -37,6 +40,8 @@ export function CreateUserForm({ onSuccess }: Props) {
   const [formData, setFormData] = useState(initialData);
   const [errors, setErrors] = useState<Errors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const handleChange = <K extends keyof FormData>(
     field: K,
     value: FormData[K],
@@ -54,6 +59,10 @@ export function CreateUserForm({ onSuccess }: Props) {
     if (!formData.email.trim()) nextErrors.email = "Email is required.";
     if (!formData.passwordHash.trim())
       nextErrors.passwordHash = "Password hash is required.";
+    if (!formData.confirmPassword.trim())
+      nextErrors.confirmPassword = "Please confirm the password.";
+    else if (formData.passwordHash !== formData.confirmPassword)
+      nextErrors.confirmPassword = "Passwords do not match.";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
     try {
@@ -102,11 +111,50 @@ export function CreateUserForm({ onSuccess }: Props) {
           />
         </FormField>
         <FormField label="Password" required error={errors.passwordHash}>
-          <Input
-            id="user-password-hash"
-            value={formData.passwordHash}
-            onChange={(e) => handleChange("passwordHash", e.target.value)}
-          />
+          <div className="relative">
+            <Input
+              id="user-password-hash"
+              type={showPassword ? "text" : "password"}
+              value={formData.passwordHash}
+              onChange={(e) => handleChange("passwordHash", e.target.value)}
+              className="pr-10"
+            />
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowPassword((current) => !current)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+        </FormField>
+        <FormField
+          label="Confirm Password"
+          required
+          error={errors.confirmPassword}
+        >
+          <div className="relative">
+            <Input
+              id="user-confirm-password"
+              type={showConfirmPassword ? "text" : "password"}
+              value={formData.confirmPassword}
+              onChange={(e) => handleChange("confirmPassword", e.target.value)}
+              className="pr-10"
+            />
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowConfirmPassword((current) => !current)}
+              aria-label={
+                showConfirmPassword
+                  ? "Hide confirm password"
+                  : "Show confirm password"
+              }
+            >
+              {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </FormField>
         <FormField label="Role" required error={errors.role}>
           <Select
