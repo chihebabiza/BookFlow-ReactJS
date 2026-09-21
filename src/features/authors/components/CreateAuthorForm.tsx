@@ -4,9 +4,9 @@ import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
 import { Input } from "@/components/ui/input";
 import { createAuthor } from "@/features/authors/api/authors.api";
-import { countriesApi } from "@/features/countries/api/countries.api";
 import type { Country } from "@/features/countries/types/country.types";
 import type { AuthorCreate } from "@/features/authors/types/author.types";
+import { getCountries } from "@/features/countries/api/countries.api";
 
 type CreateAuthorFormProps = { onSuccess: () => void };
 
@@ -20,8 +20,7 @@ export function CreateAuthorForm({ onSuccess }: CreateAuthorFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    countriesApi
-      .getAll()
+    getCountries()
       .then(setCountries)
       .catch(() => toast.error("Failed to load countries."))
       .finally(() => setIsLoadingCountries(false));

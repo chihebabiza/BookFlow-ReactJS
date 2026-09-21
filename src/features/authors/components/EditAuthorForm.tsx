@@ -4,12 +4,12 @@ import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
 import { Input } from "@/components/ui/input";
 import { updateAuthor } from "@/features/authors/api/authors.api";
-import { countriesApi } from "@/features/countries/api/countries.api";
 import type { Country } from "@/features/countries/types/country.types";
 import type {
   Author,
   AuthorUpdate,
 } from "@/features/authors/types/author.types";
+import { getCountries } from "@/features/countries/api/countries.api";
 
 type EditAuthorFormProps = { author: Author; onSuccess: () => void };
 
@@ -23,8 +23,7 @@ export function EditAuthorForm({ author, onSuccess }: EditAuthorFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    countriesApi
-      .getAll()
+    getCountries()
       .then(setCountries)
       .catch(() => toast.error("Failed to load countries."))
       .finally(() => setIsLoadingCountries(false));
