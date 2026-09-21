@@ -4,7 +4,7 @@ import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHe
 import { AuthorActions } from "@/features/authors/components/AuthorActions";
 import type { Author } from "../types/author.types";
 
-export const columns: ColumnDef<Author>[] = [
+export const columns = (onRefresh: () => void): ColumnDef<Author>[] => [
   {
     accessorKey: "firstName",
     header: ({ column }) => (
@@ -53,6 +53,8 @@ export const columns: ColumnDef<Author>[] = [
   {
     id: "actions",
     header: "Actions",
-    cell: ({ row }) => <AuthorActions author={row.original} />,
+    cell: ({ row }) => (
+      <AuthorActions author={row.original} onRefresh={onRefresh} />
+    ),
   },
 ];

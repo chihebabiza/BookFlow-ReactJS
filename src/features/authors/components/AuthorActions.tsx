@@ -14,9 +14,10 @@ import { EditAuthorForm } from "./EditAuthorForm";
 
 type AuthorActionsProps = {
   author: Author;
+  onRefresh: () => void;
 };
 
-export function AuthorActions({ author }: AuthorActionsProps) {
+export function AuthorActions({ author, onRefresh }: AuthorActionsProps) {
   const [editOpen, setEditOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -29,6 +30,7 @@ export function AuthorActions({ author }: AuthorActionsProps) {
       await deleteAuthor(author.id);
       toast.success("Author deleted successfully");
       setDeleteOpen(false);
+      onRefresh();
     } catch (error) {
       console.error("Failed to delete author:", error);
       toast.error(
@@ -66,7 +68,10 @@ export function AuthorActions({ author }: AuthorActionsProps) {
         <FormSheet open={editOpen} onOpenChange={setEditOpen}>
           <EditAuthorForm
             author={author}
-            onSuccess={() => setEditOpen(false)}
+            onSuccess={() => {
+              setEditOpen(false);
+              onRefresh();
+            }}
           />
         </FormSheet>
       )}

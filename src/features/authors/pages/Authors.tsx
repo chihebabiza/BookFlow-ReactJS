@@ -1,7 +1,7 @@
 import { DataTable } from "@/components/data-table/DataTable";
 import { Button } from "@/components/ui/button";
 import { FormSheet } from "@/components/common/FormSheet";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getAuthors } from "@/features/authors/api/authors.api";
 import type { Author } from "@/features/authors/types/author.types";
@@ -13,22 +13,39 @@ export function Authors() {
   const [authors, setAuthors] = useState<Author[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAuthors = async () => {
-      try {
-        setIsLoading(true);
-        setAuthors(await getAuthors());
-      } catch (error) {
-        console.error("Failed to load authors:", error);
-        toast.error(
-          error instanceof Error ? error.message : "Failed to load authors.",
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchAuthors = useCallback(async () => {
+    try {
+      setAuthors(await getAuthors());
+    } catch (error) {
+      console.error("Failed to load authors:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load authors.",
+      );
+    }
+  }, []);
 
-    fetchAuthors();
+  useEffect(() => {
+    let isMounted = true;
+
+    getAuthors()
+      .then((data) => {
+        if (isMounted) setAuthors(data);
+      })
+      .catch((error) => {
+        console.error("Failed to load authors:", error);
+        if (isMounted) {
+          toast.error(
+            error instanceof Error ? error.message : "Failed to load authors.",
+          );
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (isLoading) {
@@ -49,10 +66,15 @@ export function Authors() {
       </div>
 
       <FormSheet open={addOpen} onOpenChange={setAddOpen}>
-        <CreateAuthorForm onSuccess={() => setAddOpen(false)} />
+        <CreateAuthorForm
+          onSuccess={() => {
+            setAddOpen(false);
+            fetchAuthors();
+          }}
+        />
       </FormSheet>
 
-      <DataTable columns={columns} data={authors} />
+      <DataTable columns={columns(fetchAuthors)} data={authors} />
     </div>
   );
 }
