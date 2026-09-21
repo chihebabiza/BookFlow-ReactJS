@@ -4,24 +4,31 @@ import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { updateMember } from "@/features/members/api/member.api";
+import { updateUser } from "@/features/users/api/users.api";
 import type { Member } from "@/features/members/types/member.types";
+import {
+  getUserRoleValue,
+  type UserRoleValue,
+  type UserUpdate,
+} from "@/features/users/types/user.types";
 
 type Props = { member: Member; onSuccess: () => void };
 type FormData = {
   firstName: string;
   lastName: string;
-  phone: string;
+  email: string;
   isActive: boolean;
+  role: UserRoleValue;
 };
 type Errors = Partial<Record<keyof FormData, string>>;
 
 export function EditMemberForm({ member, onSuccess }: Props) {
   const initialData: FormData = {
-    firstName: member.firstName,
-    lastName: member.lastName,
-    phone: member.phone,
-    isActive: member.isActive,
+    firstName: member.user.firstName,
+    lastName: member.user.lastName,
+    email: member.user.email,
+    isActive: member.user.isActive,
+    role: getUserRoleValue(member.user.role),
   };
   const [formData, setFormData] = useState(initialData);
   const [errors, setErrors] = useState<Errors>({});
@@ -41,17 +48,19 @@ export function EditMemberForm({ member, onSuccess }: Props) {
       nextErrors.firstName = "First name is required.";
     if (!formData.lastName.trim())
       nextErrors.lastName = "Last name is required.";
-    if (!formData.phone.trim()) nextErrors.phone = "Phone is required.";
+    if (!formData.email.trim()) nextErrors.email = "Email is required.";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
     try {
       setIsSubmitting(true);
-      await updateMember(member.id, {
+      const userData: UserUpdate = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        phone: formData.phone.trim(),
+        email: formData.email.trim(),
+        role: formData.role,
         isActive: formData.isActive,
-      });
+      };
+      await updateUser(member.user.id, userData);
       toast.success("Member updated successfully");
       onSuccess();
     } catch (error) {
@@ -85,12 +94,12 @@ export function EditMemberForm({ member, onSuccess }: Props) {
             onChange={(e) => handleChange("lastName", e.target.value)}
           />
         </FormField>
-        <FormField label="Phone" required error={errors.phone}>
+        <FormField label="Email" required error={errors.email}>
           <Input
-            id="member-phone"
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => handleChange("phone", e.target.value)}
+            id="member-email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleChange("email", e.target.value)}
           />
         </FormField>
         <FormField label="Active">

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
 import { Input } from "@/components/ui/input";
-import { createMember } from "@/features/members/api/member.api";
+import { createUser } from "@/features/users/api/users.api";
 
 type Props = { onSuccess: () => void };
 type FormData = {
@@ -51,7 +51,7 @@ export function CreateMemberForm({ onSuccess }: Props) {
     if (Object.keys(nextErrors).length) return;
     try {
       setIsSubmitting(true);
-      await createMember({
+      await createUser({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),

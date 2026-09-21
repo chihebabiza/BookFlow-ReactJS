@@ -101,7 +101,7 @@ export function CreateLoanForm({ member, onSuccess }: Props) {
         <div>
           <h2 className="text-xl font-semibold">Add Loan</h2>
           <p className="text-sm text-muted-foreground">
-            Create a loan for {member.firstName} {member.lastName}.
+            Create a loan for {member.user.firstName} {member.user.lastName}.
           </p>
         </div>
         <FormField label="Book" required error={errors.bookId}>

@@ -6,30 +6,33 @@ import type { Member } from "../types/member.types";
 
 export const columns = (onRefresh: () => void): ColumnDef<Member>[] => [
   {
-    accessorKey: "firstName",
+    id: "firstName",
+    accessorFn: (row) => row.user.firstName,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="First Name" />
     ),
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("firstName")}</div>
+      <div className="font-medium">{row.original.user.firstName}</div>
     ),
   },
   {
-    accessorKey: "lastName",
+    id: "lastName",
+    accessorFn: (row) => row.user.lastName,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Last Name" />
     ),
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("lastName")}</div>
+      <div className="font-medium">{row.original.user.lastName}</div>
     ),
   },
   {
-    accessorKey: "phone",
+    id: "email",
+    accessorFn: (row) => row.user.email,
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Phone" />
+      <DataTableColumnHeader column={column} title="Email" />
     ),
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("phone")}</div>
+      <div className="font-medium">{row.original.user.email}</div>
     ),
   },
 
@@ -39,7 +42,7 @@ export const columns = (onRefresh: () => void): ColumnDef<Member>[] => [
       <DataTableColumnHeader column={column} title="Created" />
     ),
     cell: ({ row }) => {
-      const value = row.getValue("createdAt") as string | null;
+      const value = row.original.user.createdAt;
 
       if (!value) {
         return "-";
@@ -56,13 +59,7 @@ export const columns = (onRefresh: () => void): ColumnDef<Member>[] => [
       <DataTableColumnHeader column={column} title="Active" />
     ),
     cell: ({ row }) => {
-      const value = row.getValue("isActive") as boolean | null | undefined;
-
-      if (value === null || value === undefined) {
-        return "-";
-      }
-
-      return value ? "Yes" : "No";
+      return row.original.user.isActive ? "Yes" : "No";
     },
   },
   {

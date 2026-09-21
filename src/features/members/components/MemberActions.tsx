@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { ActionButtons } from "@/components/common/ActionButtons";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { FormSheet } from "@/components/common/FormSheet";
-import { deleteMember } from "@/features/members/api/member.api";
+import { deleteUser } from "@/features/users/api/users.api";
 import type { Member } from "@/features/members/types/member.types";
 import { CreateLoanForm } from "./CreateLoanForm";
 import { EditMemberForm } from "./EditMemberForm";
@@ -28,7 +28,7 @@ export function MemberActions({ member, onRefresh }: MemberActionsProps) {
   async function handleDelete() {
     try {
       setIsDeleting(true);
-      await deleteMember(member.id);
+      await deleteUser(member.user.id);
       toast.success("Member deleted successfully");
       setDeleteOpen(false);
       onRefresh();
