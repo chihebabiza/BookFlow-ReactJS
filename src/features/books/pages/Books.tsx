@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DataTable } from "@/components/data-table/DataTable";
 import { FormSheet } from "@/components/common/FormSheet";
@@ -17,23 +17,39 @@ export function Books() {
   const isAdminUser = isAdmin();
   const isLibrarianUser = isLibrarian();
 
-  useEffect(() => {
-    const fetchBooks = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getBooks();
-        setBooks(data);
-      } catch (error) {
-        console.error("Failed to load books:", error);
-        toast.error(
-          error instanceof Error ? error.message : "Failed to load books.",
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchBooks = useCallback(async () => {
+    try {
+      setBooks(await getBooks());
+    } catch (error) {
+      console.error("Failed to load books:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load books.",
+      );
+    }
+  }, []);
 
-    fetchBooks();
+  useEffect(() => {
+    let isMounted = true;
+
+    getBooks()
+      .then((data) => {
+        if (isMounted) setBooks(data);
+      })
+      .catch((error) => {
+        console.error("Failed to load books:", error);
+        if (isMounted) {
+          toast.error(
+            error instanceof Error ? error.message : "Failed to load books.",
+          );
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (isLoading) {
@@ -56,10 +72,15 @@ export function Books() {
       </div>
 
       <FormSheet open={addOpen} onOpenChange={setAddOpen}>
-        <CreateBookForm onSuccess={() => setAddOpen(false)} />
+        <CreateBookForm
+          onSuccess={() => {
+            setAddOpen(false);
+            fetchBooks();
+          }}
+        />
       </FormSheet>
 
-      <DataTable columns={columns} data={books} />
+      <DataTable columns={columns(fetchBooks)} data={books} />
     </div>
   );
 }

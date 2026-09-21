@@ -4,7 +4,7 @@ import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHe
 import { BookActions } from "@/features/books/components/BookActions";
 import type { Book } from "@/features/books/types/book.types";
 
-export const columns: ColumnDef<Book>[] = [
+export const columns = (onRefresh: () => void): ColumnDef<Book>[] => [
   {
     accessorKey: "title",
     header: ({ column }) => (
@@ -115,7 +115,7 @@ export const columns: ColumnDef<Book>[] = [
     id: "actions",
     header: "Actions",
     cell: ({ row }) => {
-      return <BookActions book={row.original} />;
+      return <BookActions book={row.original} onRefresh={onRefresh} />;
     },
   },
 ];

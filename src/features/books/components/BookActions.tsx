@@ -11,9 +11,10 @@ import { isAdmin, isLibrarian } from "@/features/auth/utils/auth.utils";
 
 type BookActionsProps = {
   book: Book;
+  onRefresh: () => void;
 };
 
-export function BookActions({ book }: BookActionsProps) {
+export function BookActions({ book, onRefresh }: BookActionsProps) {
   const [editOpen, setEditOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -29,6 +30,7 @@ export function BookActions({ book }: BookActionsProps) {
 
       toast.success("Book deleted successfully");
       setDeleteOpen(false);
+      onRefresh();
     } catch (error) {
       console.error("Failed to delete book:", error);
 
@@ -69,12 +71,17 @@ export function BookActions({ book }: BookActionsProps) {
     <>
       <ActionButtons actions={actions} />
 
-      {isAdminUser ||
-        (isLibrarianUser && (
-          <FormSheet open={editOpen} onOpenChange={setEditOpen}>
-            <EditBookForm book={book} onSuccess={() => setEditOpen(false)} />
-          </FormSheet>
-        ))}
+      {(isAdminUser || isLibrarianUser) && (
+        <FormSheet open={editOpen} onOpenChange={setEditOpen}>
+          <EditBookForm
+            book={book}
+            onSuccess={() => {
+              setEditOpen(false);
+              onRefresh();
+            }}
+          />
+        </FormSheet>
+      )}
 
       {isAdminUser && (
         <ConfirmDialog
