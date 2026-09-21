@@ -1,23 +1,24 @@
-import { apiClient } from "@/lib/api-client";
+import { api } from "@/lib/api";
 import type {
   Loan,
   LoanCreate,
   LoanUpdate,
 } from "@/features/loans/types/loan.types";
 
-export const loansApi = {
-  getByMemberId: (memberId: number) =>
-    apiClient<Loan[]>(`/Loan/member/${memberId}`),
+export const getLoansByMemberId = async (memberId: number): Promise<Loan[]> => {
+  const response = await api.get<Loan[]>(`/Loan/member/${memberId}`);
+  return response.data;
+};
 
-  create: (loan: LoanCreate) =>
-    apiClient<number>("/Loan", {
-      method: "POST",
-      body: JSON.stringify(loan),
-    }),
+export const createLoan = async (loan: LoanCreate): Promise<number> => {
+  const response = await api.post<number>("/Loan", loan);
+  return response.data;
+};
 
-  update: (id: number, loan: LoanUpdate) =>
-    apiClient<{ message: string }>(`/Loan/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(loan),
-    }),
+export const updateLoan = async (
+  id: number,
+  loan: LoanUpdate,
+): Promise<{ message: string }> => {
+  const response = await api.put<{ message: string }>(`/Loan/${id}`, loan);
+  return response.data;
 };

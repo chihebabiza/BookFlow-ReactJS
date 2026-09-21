@@ -4,11 +4,11 @@ import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
 import { Input } from "@/components/ui/input";
 import { getBooks } from "@/features/books/api/books.api";
-import { bookCopiesApi } from "@/features/book-copies/api/book-copies.api";
-import { loansApi } from "@/features/loans/api/loans.api";
+import { createLoan } from "@/features/loans/api/loans.api";
 import type { Book } from "@/features/books/types/book.types";
 import type { BookCopy } from "@/features/book-copies/types/book-copy.types";
 import type { Member } from "@/features/members/types/member.types";
+import { getBookCopyById } from "@/features/book-copies/api/book-copies.api";
 
 type Props = { member: Member; onSuccess: () => void };
 type FormData = {
@@ -46,8 +46,7 @@ export function CreateLoanForm({ member, onSuccess }: Props) {
         return;
       }
       setCopiesLoading(true);
-      bookCopiesApi
-        .getByBookId(formData.bookId)
+      getBookCopyById(formData.bookId)
         .then(setCopies)
         .catch(() => toast.error("Failed to load copies."))
         .finally(() => setCopiesLoading(false));
@@ -73,7 +72,7 @@ export function CreateLoanForm({ member, onSuccess }: Props) {
     if (Object.keys(nextErrors).length) return;
     try {
       setIsSubmitting(true);
-      await loansApi.create({
+      await createLoan({
         memberId: member.id,
         bookCopyId: formData.bookCopyId,
         borrowedDate: formData.borrowedDate,

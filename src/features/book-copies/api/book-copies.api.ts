@@ -1,6 +1,7 @@
-import { apiClient } from "@/lib/api-client";
 import type { BookCopy } from "../types/book-copy.types";
+import { api } from "@/lib/api";
 
-export const bookCopiesApi = {
-  getByBookId: (bookId: number) => apiClient<BookCopy[]>(`/BookCopy/${bookId}`),
+export const getBookCopyById = async (id: number): Promise<BookCopy[]> => {
+  const response = await api.get<BookCopy[]>(`/BookCopy/${id}`);
+  return response.data;
 };

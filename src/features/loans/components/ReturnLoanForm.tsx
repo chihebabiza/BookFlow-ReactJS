@@ -1,10 +1,11 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { FormField } from "@/components/common/FormField";
 import { FormSubmitButton } from "@/components/common/FormSubmitButton";
 import { Input } from "@/components/ui/input";
-import { useUpdateLoan } from "@/features/loans/hooks/useLoans";
+import { updateLoan } from "@/features/loans/api/loans.api";
 import type { Loan } from "@/features/loans/types/loan.types";
 
 type ReturnLoanFormProps = {
@@ -17,7 +18,7 @@ type ReturnLoanFormData = {
 };
 
 export function ReturnLoanForm({ loan, onSuccess }: ReturnLoanFormProps) {
-  const updateLoanMutation = useUpdateLoan();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { register, handleSubmit } = useForm<ReturnLoanFormData>({
     defaultValues: {
       returnedDate: new Date().toISOString().slice(0, 10),
@@ -26,10 +27,8 @@ export function ReturnLoanForm({ loan, onSuccess }: ReturnLoanFormProps) {
 
   async function onSubmit(data: ReturnLoanFormData) {
     try {
-      await updateLoanMutation.mutateAsync({
-        id: loan.id,
-        loan: { returnedDate: data.returnedDate },
-      });
+      setIsSubmitting(true);
+      await updateLoan(loan.id, { returnedDate: data.returnedDate });
       toast.success("Book returned successfully");
       onSuccess();
     } catch (error) {
@@ -37,6 +36,8 @@ export function ReturnLoanForm({ loan, onSuccess }: ReturnLoanFormProps) {
       toast.error(
         error instanceof Error ? error.message : "Failed to return book",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -56,10 +57,7 @@ export function ReturnLoanForm({ loan, onSuccess }: ReturnLoanFormProps) {
           />
         </FormField>
       </div>
-      <FormSubmitButton
-        isPending={updateLoanMutation.isPending}
-        pendingText="Returning..."
-      >
+      <FormSubmitButton isPending={isSubmitting} pendingText="Returning...">
         Return Book
       </FormSubmitButton>
     </form>

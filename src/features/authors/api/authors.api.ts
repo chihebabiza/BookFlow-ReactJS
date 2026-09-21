@@ -1,4 +1,3 @@
-import { apiClient } from "@/lib/api-client";
 import type { Author, AuthorCreate, AuthorUpdate } from "../types/author.types";
 import { api } from "@/lib/api";
 
@@ -25,24 +24,17 @@ export const deleteAuthor = async (id: number): Promise<void> => {
 };
 
 export const authorsApi = {
-  getAll: () => apiClient<Author[]>("/Author"),
+  getAll: async () => (await api.get<Author[]>("/Author")).data,
 
-  getById: (id: number) => apiClient<Author>(`/Author/${id}`),
+  getById: async (id: number) => (await api.get<Author>(`/Author/${id}`)).data,
 
-  create: (author: AuthorCreate) =>
-    apiClient<number>("/Author", {
-      method: "POST",
-      body: JSON.stringify(author),
-    }),
+  create: async (author: AuthorCreate) =>
+    (await api.post<Author>("/Author", author)).data,
 
-  update: (id: number, author: AuthorUpdate) =>
-    apiClient<{ message: string }>(`/Author/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(author),
-    }),
+  update: async (id: number, author: AuthorUpdate) =>
+    (await api.put<Author>(`/Author/${id}`, author)).data,
 
-  delete: (id: number) =>
-    apiClient<void>(`/Author/${id}`, {
-      method: "DELETE",
-    }),
+  delete: async (id: number) => {
+    await api.delete(`/Author/${id}`);
+  },
 };

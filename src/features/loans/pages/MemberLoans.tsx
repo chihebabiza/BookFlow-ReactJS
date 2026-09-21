@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import * as React from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { DataTable } from "@/components/data-table/DataTable";
@@ -10,7 +10,7 @@ import { FormSheet } from "@/components/common/FormSheet";
 import { getMemberById } from "@/features/members/api/member.api";
 import { getColumns } from "@/features/loans/components/columns";
 import { ReturnLoanForm } from "@/features/loans/components/ReturnLoanForm";
-import { loansApi } from "@/features/loans/api/loans.api";
+import { getLoansByMemberId } from "@/features/loans/api/loans.api";
 import type { Member } from "@/features/members/types/member.types";
 import type { Loan } from "@/features/loans/types/loan.types";
 
@@ -23,25 +23,40 @@ export function MemberLoans() {
   const [isLoading, setIsLoading] = useState(true);
   const [returnLoan, setReturnLoan] = React.useState<Loan | null>(null);
 
+  const fetchLoans = useCallback(async () => {
+    setLoans(await getLoansByMemberId(parsedMemberId));
+  }, [parsedMemberId]);
+
   useEffect(() => {
     if (!Number.isInteger(parsedMemberId) || parsedMemberId <= 0) return;
+    let isMounted = true;
+
     Promise.all([
       getMemberById(parsedMemberId),
-      loansApi.getByMemberId(parsedMemberId),
+      getLoansByMemberId(parsedMemberId),
     ])
       .then(([memberData, loanData]) => {
+        if (!isMounted) return;
         setMember(memberData);
         setLoans(loanData);
       })
-      .catch((error) =>
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to load member loans.",
-        ),
+      .catch(
+        (error) =>
+          isMounted &&
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Failed to load member loans.",
+          ),
       )
-      .finally(() => setIsLoading(false));
-  }, [parsedMemberId]);
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchLoans, parsedMemberId]);
 
   if (!Number.isInteger(parsedMemberId) || parsedMemberId <= 0) {
     return <p className="text-destructive">Invalid member.</p>;
@@ -65,7 +80,7 @@ export function MemberLoans() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Member Loans</h1>
           <p className="text-muted-foreground">
-            {member && `${member.firstName} ${member.lastName}`}
+            {member && `${member.user.firstName} ${member.user.lastName}`}
           </p>
         </div>
       </div>
@@ -82,7 +97,10 @@ export function MemberLoans() {
         >
           <ReturnLoanForm
             loan={returnLoan}
-            onSuccess={() => setReturnLoan(null)}
+            onSuccess={() => {
+              setReturnLoan(null);
+              fetchLoans();
+            }}
           />
         </FormSheet>
       )}
