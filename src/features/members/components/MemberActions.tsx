@@ -15,9 +15,10 @@ import { EditMemberForm } from "./EditMemberForm";
 
 type MemberActionsProps = {
   member: Member;
+  onRefresh: () => void;
 };
 
-export function MemberActions({ member }: MemberActionsProps) {
+export function MemberActions({ member, onRefresh }: MemberActionsProps) {
   const navigate = useNavigate();
   const [editOpen, setEditOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
@@ -30,6 +31,7 @@ export function MemberActions({ member }: MemberActionsProps) {
       await deleteMember(member.id);
       toast.success("Member deleted successfully");
       setDeleteOpen(false);
+      onRefresh();
     } catch (error) {
       console.error("Failed to delete member:", error);
       toast.error(
@@ -73,7 +75,13 @@ export function MemberActions({ member }: MemberActionsProps) {
         ]}
       />
       <FormSheet open={editOpen} onOpenChange={setEditOpen}>
-        <EditMemberForm member={member} onSuccess={() => setEditOpen(false)} />
+        <EditMemberForm
+          member={member}
+          onSuccess={() => {
+            setEditOpen(false);
+            onRefresh();
+          }}
+        />
       </FormSheet>
       <FormSheet open={loanOpen} onOpenChange={setLoanOpen}>
         <CreateLoanForm member={member} onSuccess={() => setLoanOpen(false)} />

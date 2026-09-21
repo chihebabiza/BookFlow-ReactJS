@@ -4,7 +4,7 @@ import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHe
 import { MemberActions } from "@/features/members/components/MemberActions";
 import type { Member } from "../types/member.types";
 
-export const columns: ColumnDef<Member>[] = [
+export const columns = (onRefresh: () => void): ColumnDef<Member>[] => [
   {
     accessorKey: "firstName",
     header: ({ column }) => (
@@ -68,6 +68,8 @@ export const columns: ColumnDef<Member>[] = [
   {
     id: "actions",
     header: "Actions",
-    cell: ({ row }) => <MemberActions member={row.original} />,
+    cell: ({ row }) => (
+      <MemberActions member={row.original} onRefresh={onRefresh} />
+    ),
   },
 ];

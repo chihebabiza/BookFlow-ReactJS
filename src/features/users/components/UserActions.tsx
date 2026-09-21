@@ -11,7 +11,13 @@ import { deleteUser } from "@/features/users/api/users.api";
 import type { User } from "@/features/users/types/user.types";
 import { EditUserForm } from "./EditUserForm";
 
-export function UserActions({ user }: { user: User }) {
+export function UserActions({
+  user,
+  onRefresh,
+}: {
+  user: User;
+  onRefresh: () => void;
+}) {
   const [editOpen, setEditOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -22,6 +28,7 @@ export function UserActions({ user }: { user: User }) {
       await deleteUser(user.id);
       toast.success("User deleted successfully");
       setDeleteOpen(false);
+      onRefresh();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete user",
@@ -51,7 +58,13 @@ export function UserActions({ user }: { user: User }) {
         ]}
       />
       <FormSheet open={editOpen} onOpenChange={setEditOpen}>
-        <EditUserForm user={user} onSuccess={() => setEditOpen(false)} />
+        <EditUserForm
+          user={user}
+          onSuccess={() => {
+            setEditOpen(false);
+            onRefresh();
+          }}
+        />
       </FormSheet>
       <ConfirmDialog
         open={deleteOpen}

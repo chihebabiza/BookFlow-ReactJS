@@ -4,7 +4,7 @@ import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHe
 import { UserActions } from "./UserActions";
 import { type User } from "../types/user.types";
 
-export const columns: ColumnDef<User>[] = [
+export const columns = (onRefresh: () => void): ColumnDef<User>[] => [
   {
     id: "fullName",
     header: ({ column }) => (
@@ -54,6 +54,8 @@ export const columns: ColumnDef<User>[] = [
   {
     id: "actions",
     header: "Actions",
-    cell: ({ row }) => <UserActions user={row.original} />,
+    cell: ({ row }) => (
+      <UserActions user={row.original} onRefresh={onRefresh} />
+    ),
   },
 ];

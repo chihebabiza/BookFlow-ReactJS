@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { FormSheet } from "@/components/common/FormSheet";
@@ -14,15 +14,37 @@ export function Members() {
   const [members, setMembers] = useState<Member[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchMembers = useCallback(async () => {
+    try {
+      setMembers(await getMembers());
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load members.",
+      );
+    }
+  }, []);
+
   useEffect(() => {
+    let isMounted = true;
+
     getMembers()
-      .then(setMembers)
-      .catch((error) =>
-        toast.error(
-          error instanceof Error ? error.message : "Failed to load members.",
-        ),
-      )
-      .finally(() => setIsLoading(false));
+      .then((data) => {
+        if (isMounted) setMembers(data);
+      })
+      .catch((error) => {
+        if (isMounted) {
+          toast.error(
+            error instanceof Error ? error.message : "Failed to load members.",
+          );
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (isLoading) {
@@ -43,10 +65,15 @@ export function Members() {
       </div>
 
       <FormSheet open={addOpen} onOpenChange={setAddOpen}>
-        <CreateMemberForm onSuccess={() => setAddOpen(false)} />
+        <CreateMemberForm
+          onSuccess={() => {
+            setAddOpen(false);
+            fetchMembers();
+          }}
+        />
       </FormSheet>
 
-      <DataTable columns={columns} data={members} />
+      <DataTable columns={columns(fetchMembers)} data={members} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { FormSheet } from "@/components/common/FormSheet";
@@ -14,15 +14,37 @@ export function Users() {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchUsers = useCallback(async () => {
+    try {
+      setUsers(await getUsers());
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load users.",
+      );
+    }
+  }, []);
+
   useEffect(() => {
+    let isMounted = true;
+
     getUsers()
-      .then(setUsers)
-      .catch((error) =>
-        toast.error(
-          error instanceof Error ? error.message : "Failed to load users.",
-        ),
-      )
-      .finally(() => setIsLoading(false));
+      .then((data) => {
+        if (isMounted) setUsers(data);
+      })
+      .catch((error) => {
+        if (isMounted) {
+          toast.error(
+            error instanceof Error ? error.message : "Failed to load users.",
+          );
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (isLoading) return <div>Loading users...</div>;
@@ -38,9 +60,14 @@ export function Users() {
         <Button onClick={() => setAddOpen(true)}>Add User</Button>
       </div>
       <FormSheet open={addOpen} onOpenChange={setAddOpen}>
-        <CreateUserForm onSuccess={() => setAddOpen(false)} />
+        <CreateUserForm
+          onSuccess={() => {
+            setAddOpen(false);
+            fetchUsers();
+          }}
+        />
       </FormSheet>
-      <DataTable columns={columns} data={users} />
+      <DataTable columns={columns(fetchUsers)} data={users} />
     </div>
   );
 }
