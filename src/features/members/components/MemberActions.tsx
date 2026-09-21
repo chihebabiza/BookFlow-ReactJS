@@ -84,7 +84,13 @@ export function MemberActions({ member, onRefresh }: MemberActionsProps) {
         />
       </FormSheet>
       <FormSheet open={loanOpen} onOpenChange={setLoanOpen}>
-        <CreateLoanForm member={member} onSuccess={() => setLoanOpen(false)} />
+        <CreateLoanForm
+          member={member}
+          onSuccess={() => {
+            setLoanOpen(false);
+            onRefresh();
+          }}
+        />
       </FormSheet>
       <ConfirmDialog
         open={deleteOpen}

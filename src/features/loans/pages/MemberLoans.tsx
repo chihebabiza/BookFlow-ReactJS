@@ -24,7 +24,15 @@ export function MemberLoans() {
   const [returnLoan, setReturnLoan] = React.useState<Loan | null>(null);
 
   const fetchLoans = useCallback(async () => {
-    setLoans(await getLoansByMemberId(parsedMemberId));
+    try {
+      setLoans(await getLoansByMemberId(parsedMemberId));
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to refresh member loans.",
+      );
+    }
   }, [parsedMemberId]);
 
   useEffect(() => {
