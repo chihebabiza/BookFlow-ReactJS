@@ -13,9 +13,10 @@ import { EditCategoryForm } from "./EditCategoryForm";
 
 type CategoryActionsProps = {
   category: Category;
+  onRefresh: () => void;
 };
 
-export function CategoryActions({ category }: CategoryActionsProps) {
+export function CategoryActions({ category, onRefresh }: CategoryActionsProps) {
   const [editOpen, setEditOpen] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -26,6 +27,7 @@ export function CategoryActions({ category }: CategoryActionsProps) {
       await deleteCategory(category.id);
       toast.success("Category deleted successfully");
       setDeleteOpen(false);
+      onRefresh();
     } catch (error) {
       console.error("Failed to delete category:", error);
       toast.error(
@@ -58,7 +60,10 @@ export function CategoryActions({ category }: CategoryActionsProps) {
       <FormSheet open={editOpen} onOpenChange={setEditOpen}>
         <EditCategoryForm
           category={category}
-          onSuccess={() => setEditOpen(false)}
+          onSuccess={() => {
+            setEditOpen(false);
+            onRefresh();
+          }}
         />
       </FormSheet>
       <ConfirmDialog

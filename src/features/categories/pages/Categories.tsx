@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { FormSheet } from "@/components/common/FormSheet";
@@ -14,21 +14,39 @@ export function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const data = await getCategories();
-        setCategories(data);
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to load categories.",
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchCategories = useCallback(async () => {
+    try {
+      setCategories(await getCategories());
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load categories.",
+      );
+    }
+  }, []);
 
-    fetchCategories();
+  useEffect(() => {
+    let isMounted = true;
+
+    getCategories()
+      .then((data) => {
+        if (isMounted) setCategories(data);
+      })
+      .catch((error) => {
+        if (isMounted) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Failed to load categories.",
+          );
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (isLoading) {
@@ -49,10 +67,15 @@ export function Categories() {
       </div>
 
       <FormSheet open={addOpen} onOpenChange={setAddOpen}>
-        <CreateCategoryForm onSuccess={() => setAddOpen(false)} />
+        <CreateCategoryForm
+          onSuccess={() => {
+            setAddOpen(false);
+            fetchCategories();
+          }}
+        />
       </FormSheet>
 
-      <DataTable columns={columns} data={categories} />
+      <DataTable columns={columns(fetchCategories)} data={categories} />
     </div>
   );
 }

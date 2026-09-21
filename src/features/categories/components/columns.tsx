@@ -4,7 +4,7 @@ import { DataTableColumnHeader } from "@/components/data-table/DataTableColumnHe
 import { CategoryActions } from "@/features/categories/components/CategoryActions";
 import type { Category } from "../types/category.types";
 
-export const columns: ColumnDef<Category>[] = [
+export const columns = (onRefresh: () => void): ColumnDef<Category>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => (
@@ -35,6 +35,8 @@ export const columns: ColumnDef<Category>[] = [
   {
     id: "actions",
     header: "Actions",
-    cell: ({ row }) => <CategoryActions category={row.original} />,
+    cell: ({ row }) => (
+      <CategoryActions category={row.original} onRefresh={onRefresh} />
+    ),
   },
 ];
